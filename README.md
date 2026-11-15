@@ -314,6 +314,34 @@ images/                    → capturas com dados fictícios
 
 ---
 
+## Verificação final (faça nesta ordem)
+
+Se tudo estiver certo, estes itens passam:
+
+- [ ] as 4 abas existem com os cabeçalhos exatos
+- [ ] os 7 arquivos de script estão no projeto (`Code`, `Dashboard`, `Email`,
+      `ResumoMensal`, `GravaHistoricoDario`, `GravaHistoricoMensal`, `Cotacao`)
+- [ ] `setupProject` roda sem erro e o menu **₿ Satoshi Ledger** aparece
+- [ ] a URL `/exec` abre o dashboard e mostra seus números
+- [ ] em **Gatilhos** aparecem 3 automações
+- [ ] uma movimentação cadastrada aparece em **Movimentações**
+- [ ] o valor de **Patrimônio** muda quando você cadastra uma compra
+
+Se algum item falhar, veja [`docs/10-problemas.md`](docs/10-problemas.md).
+
+## Quanto tempo leva
+
+| Etapa | Tempo |
+|---|---|
+| planilha + abas | 5 min |
+| colar os 7 arquivos | 10 min |
+| autorizar + `setupProject` | 5 min |
+| publicar o web app | 3 min |
+| Telegram (opcional) | 10 min |
+| **total** | **~35 min** |
+
+---
+
 ## Aviso
 
 Este projeto é uma **ferramenta de registro pessoal**, não é recomendação de
