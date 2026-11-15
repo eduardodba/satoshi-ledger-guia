@@ -7,14 +7,36 @@ outro com a tela (`Dashboard.html`). Tudo roda na infraestrutura do Google.
 
 Na planilha: **Extensões → Apps Script**. Abre uma nova aba com o editor.
 
-## Os dois arquivos
+## Os arquivos do projeto
 
-1. **`Código.gs`** (ou `Code.gs`)
-   Apague o conteúdo padrão e cole o conteúdo de [`src/Code.gs`](../src/Code.gs).
+O projeto tem **7 arquivos**. Dois são obrigatórios; os outros cinco habilitam
+recursos extras e podem ficar de fora se você quiser o mínimo.
 
-2. **`Dashboard.html`**
-   Menu **Arquivos → + → HTML**. Nome: `Dashboard` (sem `.html`).
-   Cole o conteúdo de [`src/Dashboard.html`](../src/Dashboard.html).
+| Arquivo | Tipo | Obrigatório? | Para que serve |
+|---|---|---|---|
+| `Code` | Script | **sim** | motor do projeto: menus, gatilhos, preços, posição, DCA |
+| `Dashboard` | HTML | **sim** | a interface (dashboard) |
+| `Email` | Script | **sim** | relatório mensal por email (o menu chama essa função) |
+| `ResumoMensal` | Script | opcional | resumo mensal com gráficos no Telegram |
+| `GravaHistoricoDario` | Script | opcional | grava o histórico do dia quando você roda à mão |
+| `GravaHistoricoMensal` | Script | opcional | grava o histórico do mês quando você roda à mão |
+| `Cotacao` | Script | opcional | função de teste da cotação (`COTACAO`) |
+
+> Sem o `Email`, o item “Enviar relatório mensal por email” do menu dá erro
+> (“function not found”). Ele é pequeno e não tem dependências — vale incluir.
+
+### Como criar cada um
+
+1. **`Code`** — já existe como `Código.gs`. Apague o conteúdo e cole
+   [`src/Code.gs`](../src/Code.gs).
+2. **`Dashboard`** — **Arquivos → + → HTML**, nome `Dashboard` (sem `.html`),
+   cole [`src/Dashboard.html`](../src/Dashboard.html).
+3. **`Email`**, **`ResumoMensal`**, **`GravaHistoricoDario`**,
+   **`GravaHistoricoMensal`**, **`Cotacao`** — **Arquivos → + → Script**, um por
+   um, com o nome exato da tabela, colando o arquivo correspondente de `src/`.
+
+> O nome importa: as funções se chamam entre arquivos. `GravaHistoricoDario`
+> está com essa grafia mesmo (sem o “i” em “Diário”) porque é o nome histórico.
 
 > O nome importa: `doGet()` chama `HtmlService.createHtmlOutputFromFile('Dashboard')`.
 > Se o arquivo se chamar `Dashboard.html` no nome (com extensão), o Apps Script

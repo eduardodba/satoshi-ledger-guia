@@ -16,6 +16,13 @@ O `setupProject` cria três, sem duplicar:
 > O horário é aproximado: o Google escolhe o minuto dentro daquela hora. O fuso
 > usado é o das Configurações do projeto.
 
+## Gatilho extra (opcional) — resumo no Telegram
+
+O arquivo `ResumoMensal.gs` traz a função `configurarGatilhoAutom`, que cria um
+gatilho para enviar o **resumo mensal com gráficos** no Telegram. Ela não é
+chamada automaticamente: rode uma vez no editor se quiser esse recurso. Ele
+depende das mesmas propriedades `TELEGRAM_TOKEN` e `TELEGRAM_CHAT_ID`.
+
 ## Como conferir
 
 No editor do Apps Script: ícone de **relógio (⏰) → Gatilhos**. Devem aparecer os

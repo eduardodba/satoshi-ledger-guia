@@ -91,7 +91,14 @@ chave de API paga ou conhecimento em programação.
 4. À esquerda, em **Arquivos → + → HTML**, crie um arquivo chamado **`Dashboard`**
    (sem `.html` no nome).
 5. Copie o conteúdo de [`src/Dashboard.html`](src/Dashboard.html) e cole nele.
-6. Salve (Ctrl/Cmd + S).
+6. Crie os demais scripts — **Arquivos → + → Script** — com estes nomes:
+   `Email`, `ResumoMensal`, `GravaHistoricoDario`, `GravaHistoricoMensal`,
+   `Cotacao`. Cole o arquivo de mesmo nome de `src/`.
+
+> Só `Code`, `Dashboard` e `Email` são obrigatórios. Os outros três habilitam
+> recursos opcionais (resumo no Telegram e gravação manual de histórico).
+
+7. Salve (Ctrl/Cmd + S).
 
 > O nome do arquivo HTML **precisa** ser exatamente `Dashboard`, porque o código
 > procura por esse nome ao abrir a página.
@@ -284,8 +291,13 @@ e excluir movimentações.
 
 ```
 README.md                  → este guia
-src/Code.gs                → servidor (Apps Script)
-src/Dashboard.html         → interface (dashboard)
+src/Code.gs                → servidor (obrigatório)
+src/Dashboard.html         → interface (obrigatório)
+src/Email.gs               → relatório mensal por email (obrigatório)
+src/ResumoMensal.gs        → resumo mensal no Telegram com gráficos (opcional)
+src/GravaHistoricoDario.gs → grava o histórico do dia à mão (opcional)
+src/GravaHistoricoMensal.gs→ grava o histórico do mês à mão (opcional)
+src/Cotacao.gs             → teste da cotação (opcional)
 src/appsscript.json        → configuração do projeto
 docs/01-planilha.md        → abas e colunas em detalhe
 docs/02-apis.md            → as APIs gratuitas usadas (e como funcionam)
