@@ -1,0 +1,92 @@
+# 7. Como usar no dia a dia
+
+## Fluxo básico
+
+1. **Comprou BTC?** Abra o dashboard → **+ Movimentação** → preencha → Salvar.
+2. **Vendeu?** Mesmo caminho, escolhendo “Venda”.
+3. **Recebeu sats de taxa/poeira?** Use **Ajuste de BTC** (não é compra).
+4. **O caixa não bate?** Use **Ajuste de caixa** (não é compra).
+
+O dashboard recalcula tudo sozinho ao salvar.
+
+## Os campos do formulário
+
+| Campo | Explicação |
+|---|---|
+| **Data** | dia da operação (não o dia em que você cadastrou) |
+| **Tipo** | Compra ou Venda |
+| **Moeda informada** | em que moeda você digitou o preço/valor (`USD` ou `BRL`) |
+| **Preço** | quanto custou **1 BTC** naquele momento |
+| **Valor** | quanto você pagou/recebeu **no total** |
+| **Quantidade** | calculada automaticamente (`valor ÷ preço`) |
+| **Investidor** | quem fez o aporte (útil se mais de uma pessoa usa a mesma carteira) |
+| **Origem** | de onde saiu o dinheiro (veja abaixo) |
+
+## Origem: escolhendo certo
+
+| Situação | Origem |
+|---|---|
+| Dinheiro novo, vindo do seu salário/banco | `Novo` |
+| Você vendeu BTC antes e está usando esse saldo | `Caixa` |
+| Oportunidade pontual, com a reserva especial | `Especial` |
+| Só corrigindo o caixa (sem comprar BTC) | `Ajuste` |
+| Só corrigindo a quantidade de BTC | `Ajuste BTC` |
+
+Escolher errado não “quebra” a carteira, mas distorce o DCA: `Caixa` conta na
+cota semanal; `Especial` não conta.
+
+## Entendendo os números do topo
+
+| Número | O que é |
+|---|---|
+| **Patrimônio** | quantidade de BTC × preço de agora |
+| **Aportado** | soma de tudo que você colocou (compras − vendas) |
+| **Lucro** | patrimônio − custo do que você ainda tem |
+| **Preço médio** | custo ÷ quantidade (não muda quando você vende) |
+| **Caixa** | dinheiro parado na carteira, vindo de vendas |
+
+> O preço médio é **ponderado**: comprar mais barato derruba a média; comprar
+> caro sobe. Vender **não** altera o preço médio — só reduz a quantidade e o
+> custo na mesma proporção.
+
+## Editando e excluindo
+
+Na seção **Movimentações**:
+
+- **✎** abre a movimentação para edição.
+- **🗑** exclui (pede confirmação).
+- O filtro por período (7D, 30D, 6M, 1A, Tudo) e por operação ajuda a achar.
+
+Ao editar a data, o app reordena os registros e recalcula tudo.
+
+## Conferindo se está tudo certo
+
+Uma checagem simples, de vez em quando:
+
+```
+Qtd  ≈  Aporte $ ÷ Cotação $
+```
+
+Se alguma linha não fechar, o preço médio fica levemente errado. O dashboard
+permite corrigir pela edição.
+
+## Filtros e visões
+
+- **Período** (7D/30D/6M/1A/Tudo) muda os gráficos.
+- **Moeda** (BRL/USD) converte os valores; a quantidade em BTC não muda.
+- **Investidor** filtra por pessoa, quando há mais de uma.
+
+## Privacidade
+
+- O botão de **olho** embaralha os valores na tela (útil para mostrar o
+  dashboard sem expor números).
+- O dashboard é publicado como “Somente eu” — ninguém mais acessa pela URL.
+
+## Rotina sugerida
+
+| Frequência | Tarefa |
+|---|---|
+| a cada operação | registrar |
+| semanal | conferir o card do DCA |
+| mensal | olhar o mapa de calor e o resumo |
+| trimestral | **Backup + reconstruir históricos** |

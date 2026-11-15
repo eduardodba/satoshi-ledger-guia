@@ -1,0 +1,73 @@
+# 6. Bot do Telegram (do zero)
+
+Opcional. Serve para receber o alerta do aporte da semana e o resumo do mês no
+celular.
+
+## 1. Criar o bot
+
+1. No Telegram, procure **@BotFather** (é o oficial, com selo azul).
+2. Envie `/newbot`.
+3. Ele pede um **nome** (aparece para você) — ex.: `Minha Carteira BTC`.
+4. Depois um **usuário**, que precisa terminar em `bot` — ex.: `minhacarteira_btc_bot`.
+5. Ele responde com o **token**, algo assim:
+
+```
+1234567890:AAH3xY9kPq7LmN2vB8sT4uW6zR1cD5eF7gH
+```
+
+> Trate esse token como senha: quem tem o token controla o bot. Se vazar, use
+> `/revoke` no BotFather para gerar outro.
+
+## 2. Descobrir seu chat id
+
+1. Abra uma conversa com o seu bot e mande `oi` (o bot precisa de pelo menos uma
+   mensagem sua para poder te responder).
+2. Abra no navegador:
+
+```
+https://api.telegram.org/bot<SEU_TOKEN>/getUpdates
+```
+
+3. Procure por `"chat":{"id":123456789,...}`. Esse número é o seu **chat id**.
+
+> Se vier vazio, mande outra mensagem para o bot e recarregue a página.
+
+## 3. Configurar no dashboard
+
+1. Abra o dashboard.
+2. Clique no ícone de **engrenagem** (Configurações).
+3. Cole o **token** e o **chat id**.
+4. Salve.
+
+O dashboard grava essas informações nas **Propriedades do script** — não vão para
+a planilha e não aparecem no código.
+
+## 4. Testar
+
+Pela planilha: menu **₿ Satoshi Ledger → Enviar relatório mensal por email**
+(valida a configuração) ou, no editor do Apps Script, rode `sendWeeklyDcaAlert`.
+
+Se a mensagem chegar, está pronto.
+
+## O que o bot envia
+
+| Mensagem | Quando |
+|---|---|
+| Aporte da semana (valor, BTC estimado, prazo) | toda quarta ~13h, se estiver na janela de DCA |
+| Relatório mensal | dia 1º de cada mês |
+
+## Problemas comuns
+
+| Erro | Causa | Solução |
+|---|---|---|
+| `chat not found` | chat id errado ou bot nunca recebeu mensagem | mande `oi` para o bot e reconfira o id |
+| `Unauthorized` | token inválido/revogado | gere novo token no BotFather |
+| `Forbidden: bot was blocked` | você bloqueou o bot | desbloqueie no Telegram |
+| nada chega | gatilho não criado | rode `setupProject` e confira em Gatilhos |
+
+---
+
+## Alternativa sem Telegram
+
+Se não quiser bot, simplesmente ignore esta página: o dashboard e a planilha
+funcionam iguais. O único recurso perdido são os alertas automáticos.
