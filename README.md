@@ -180,6 +180,29 @@ qualquer um com o link veja seus dados.
 
 ---
 
+## Passo 4.5 — Carregar o histórico de preços (uma vez)
+
+A planilha nova tem `Histórico Diário` e `Histórico Mensal` vazios, então os
+gráficos de **patrimônio** e de **BTC × preço médio** começam em branco.
+
+Depois de cadastrar seus aportes:
+
+1. Menu **₿ Satoshi Ledger → Carregar histórico de preços (1º uso)**.
+2. Aguarde o aviso “*N dia(s) adicionado(s)*”.
+3. Recarregue o dashboard: os gráficos aparecem completos.
+
+A rotina preenche **do primeiro aporte até hoje** com o fechamento diário do BTC
+(Coinbase, com Kraken de reserva), **sem sobrescrever** nada. Pode rodar de novo:
+só completa o que faltar.
+
+> O guia usa como referência a série que começa em **18/02/2022**. Se o seu
+> primeiro aporte for anterior, o gráfico começa na primeira data com preço
+> disponível — os dias antes disso não aparecem, e isso é esperado.
+
+📖 [`docs/11-historico-inicial.md`](docs/11-historico-inicial.md)
+
+---
+
 ## Passo 5 — Registrar as primeiras compras
 
 Há dois jeitos:
@@ -343,6 +366,7 @@ docs/07-como-usar.md       → rotina e significado de cada campo
 docs/08-dca.md             → como o DCA é calculado
 docs/09-modo-fiscal.md     → controle para a Receita
 docs/10-problemas.md       → erros e soluções
+docs/11-historico-inicial.md → preencher o histórico do primeiro aporte até hoje
 images/                    → capturas com dados fictícios
 ```
 

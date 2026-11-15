@@ -10,7 +10,7 @@
  */
 
 var APP = Object.freeze({
-  VERSION: '2.18.0',
+  VERSION: '2.20.0',
   SHEETS: {
     IRPF: 'IRPF',
     CONTRIBUTIONS: 'Aportes',
@@ -113,6 +113,7 @@ function onOpen() {
     .createMenu('₿ Satoshi Ledger')
     .addItem('Configurar / atualizar projeto', 'setupProject')
     .addItem('Registrar snapshot agora', 'recordDailySnapshot')
+    .addItem('Carregar histórico de preços (1º uso)', 'preencherHistoricoDiario')
     .addItem('Reconstruir históricos', 'rebuildHistories')
     .addItem('Backup + reconstruir históricos', 'backupAndRebuildHistories')
     .addSeparator()
@@ -1162,6 +1163,231 @@ function backupAndRebuildHistories() {
 }
 
 /** Recalcula saldo, quantidade e PM em cada data, preservando preço BTC e câmbio histórico implícito. */
+// -----------------------------------------------------------------------------
+// HISTÓRICO INICIAL DE PREÇOS
+// -----------------------------------------------------------------------------
+//
+// Quem acabou de montar a planilha só tem a aba "Aportes" preenchida. O
+// "Histórico Diário" começa vazio e só passa a crescer depois que o gatilho
+// diário roda — por isso os gráficos de patrimônio e de preço médio ficam sem
+// passado. Esta rotina completa as datas FALTANTES do primeiro aporte até hoje,
+// usando o fechamento diário do BTC de uma fonte pública gratuita.
+//
+// Regras:
+//  - nunca sobrescreve linha existente (só adiciona datas que faltam);
+//  - roda quantas vezes quiser (idempotente);
+//  - se a fonte de preço falhar, usa o preço do próprio aporte mais próximo.
+
+/** ISO (yyyy-MM-dd) a partir de um timestamp UTC — o candle diário é fechado em UTC. */
+function isoUtc_(ms) {
+  var d = new Date(Number(ms));
+  var p = function (v) { return (v < 10 ? '0' : '') + v; };
+  return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate());
+}
+
+/**
+ * Fechamentos diários do BTC entre duas datas ISO: { 'yyyy-mm-dd': close }.
+ * Fontes públicas gratuitas, sem chave: Coinbase Exchange (principal) e Kraken
+ * (reserva). A Binance responde 451 a partir dos servidores do Google, por isso
+ * não é usada.
+ */
+function buscarFechamentosDiarios_(inicioIso, fimIso) {
+  var out = {};
+  // começa 1 dia antes: a corretora não devolve o candle do dia inicial
+  var inicio = fromIsoDate_(inicioIso).getTime() - 86400000;
+  var fim = fromIsoDate_(fimIso).getTime() + 86400000;
+
+  // --- 1) Coinbase: até 300 candles por chamada ---
+  try {
+    var cursor = inicio, voltas = 0;
+    while (cursor < fim && voltas < 20) {
+      voltas++;
+      var blocoFim = Math.min(fim, cursor + 300 * 86400000);
+      var url = 'https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=86400'
+        + '&start=' + new Date(cursor).toISOString()
+        + '&end=' + new Date(blocoFim).toISOString();
+      var data = fetchJson_(url);
+      if (!data || !data.length) break;
+      data.forEach(function (k) {
+        var preco = Number(k[4]);                 // [time, low, high, open, close, volume]
+        if (preco > 0) out[isoUtc_(Number(k[0]) * 1000)] = preco;
+      });
+      cursor = blocoFim;
+    }
+  } catch (e) {
+    console.warn('Coinbase indisponível: ' + e.message);
+  }
+  if (Object.keys(out).length) return out;
+
+  // --- 2) Kraken: até 720 candles por chamada ---
+  try {
+    var since = Math.floor(inicio / 1000) - 86400, voltasK = 0;
+    while (voltasK < 8) {
+      voltasK++;
+      var resp = fetchJson_('https://api.kraken.com/0/public/OHLC?pair=XBTUSD&interval=1440&since=' + since);
+      var serie = resp && resp.result ? (resp.result.XXBTZUSD || resp.result.XBTUSD) : null;
+      if (!serie || !serie.length) break;
+      var ultimo = 0;
+      serie.forEach(function (k) {
+        var preco = Number(k[4]);                 // [time, open, high, low, close, ...]
+        if (preco > 0) out[isoUtc_(Number(k[0]) * 1000)] = preco;
+        ultimo = Number(k[0]);
+      });
+      if (!ultimo || ultimo <= since) break;
+      since = ultimo;
+      if (ultimo * 1000 >= fim) break;
+    }
+  } catch (e) {
+    console.warn('Kraken indisponível: ' + e.message);
+  }
+  return out;
+}
+
+/**
+ * Completa o Histórico Diário (e o Mensal) do primeiro aporte até hoje.
+ * Use pelo menu: ₿ Satoshi Ledger → Carregar histórico de preços (1º uso).
+ */
+function preencherHistoricoDiario() {
+  var resultado = preencherHistoricoDiario_(false);
+  try {
+    SpreadsheetApp.getActiveSpreadsheet().toast(resultado.message, 'Satoshi Ledger', 8);
+  } catch (e) {}
+  return resultado;
+}
+
+/** Versão de teste: calcula tudo e NÃO escreve na planilha. */
+function testarPreenchimentoHistorico() {
+  var r = preencherHistoricoDiario_(true);
+  Logger.log(JSON.stringify({ adicionados: r.adicionados, primeiraData: r.primeiraData, ultimaData: r.ultimaData, exemplo: r.exemplo, fonte: r.fonte, message: r.message }, null, 2));
+  return r;
+}
+
+function preencherHistoricoDiario_(dryRun) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var contributions = readContributions_(ss).filter(function (c) { return !c.isAdjustment; });
+    if (!contributions.length) {
+      return { success: false, adicionados: 0, message: 'Cadastre pelo menos um aporte antes de carregar o histórico.' };
+    }
+
+    var sheet = ss.getSheetByName(APP.SHEETS.DAILY) || ensureSheet_(ss, APP.SHEETS.DAILY, APP.HEADERS.DAILY);
+
+    // datas que já existem
+    var existentes = {};
+    if (sheet.getLastRow() > 1) {
+      sheet.getRange(2, 1, sheet.getLastRow() - 1, 1).getValues().forEach(function (r) {
+        if (r[0]) existentes[toIsoDate_(r[0])] = true;
+      });
+    }
+
+    var inicioIso = contributions[0].date;
+    var hojeIso = toIsoDate_(new Date());
+
+    // datas faltantes (na ordem)
+    var faltantes = [];
+    for (var d = fromIsoDate_(inicioIso); toIsoDate_(d) <= hojeIso; d = new Date(d.getTime() + 86400000)) {
+      var iso = toIsoDate_(d);
+      if (!existentes[iso]) faltantes.push(iso);
+      if (faltantes.length > 4000) break;   // trava de segurança
+    }
+    if (!faltantes.length) {
+      return { success: true, adicionados: 0, message: 'O histórico já está completo — nada a fazer.' };
+    }
+
+    // preços: API pública; se falhar, cai para os preços dos próprios aportes
+    var precos = {};
+    var fonte = 'binance';
+    try { precos = buscarFechamentosDiarios_(inicioIso, hojeIso); } catch (e) { precos = {}; }
+    var porAporte = {};
+    contributions.forEach(function (c) { if (c.priceUsd > 0) porAporte[c.date] = c.priceUsd; });
+    if (!Object.keys(precos).length) fonte = 'aportes';
+
+    var fx = getExchangeRate_();
+    if (!(fx > 0)) fx = 1;
+
+    // posição incremental (O(dias + aportes))
+    var ordenados = contributions.slice().sort(function (a, b) { return a.date.localeCompare(b.date); });
+    var idx = 0, qtd = 0, custo = 0, ultimoPreco = 0;
+    var linhas = [];
+    var faltantesSet = {};
+    faltantes.forEach(function (iso) { faltantesSet[iso] = true; });
+
+    for (var dia = fromIsoDate_(inicioIso); ; dia = new Date(dia.getTime() + 86400000)) {
+      var isoDia = toIsoDate_(dia);
+      if (isoDia > hojeIso) break;
+
+      // aplica aportes do dia
+      while (idx < ordenados.length && ordenados[idx].date <= isoDia) {
+        var c = ordenados[idx];
+        var q = Number(c.quantity) || 0;
+        var v = Number(c.amountUsd) || 0;
+        if (c.isCoinAdjustment) {
+          qtd = Math.max(0, qtd + q);
+        } else if (q > 0 && v > 0) {
+          qtd += q; custo += v;
+        } else if (q < 0 || v < 0) {
+          var vendido = Math.min(Math.abs(q), qtd);
+          var pm = qtd > 0 ? custo / qtd : 0;
+          qtd = Math.max(0, qtd - vendido);
+          custo = Math.max(0, custo - pm * vendido);
+        }
+        if (c.priceUsd > 0) ultimoPreco = Number(c.priceUsd);
+        idx++;
+      }
+
+      var preco = precos[isoDia];
+      if (!(preco > 0)) preco = porAporte[isoDia];
+      if (!(preco > 0)) preco = ultimoPreco;
+      if (!(preco > 0)) continue;   // sem preço nenhum: pula o dia
+      ultimoPreco = preco;
+
+      if (faltantesSet[isoDia]) {
+        var valor = qtd * preco;
+        linhas.push([fromIsoDate_(isoDia), valor, valor * fx, qtd, qtd > 0 ? custo / qtd : 0, preco]);
+      }
+    }
+
+    if (!linhas.length) {
+      return { success: false, adicionados: 0, message: 'Não foi possível obter preços para preencher o histórico.' };
+    }
+
+    if (!dryRun) {
+      var alvo = sheet.getLastRow() + 1;
+      sheet.getRange(alvo, 1, linhas.length, 6).setValues(linhas);
+      // formata o bloco inteiro de uma vez (rápido) e colore a coluna do PM
+      var rng = sheet.getRange(alvo, 1, linhas.length, 6);
+      rng.setFontFamily('Arial').setFontSize(9)
+        .setBorder(true, true, true, true, true, true, '#E5E7EB', SpreadsheetApp.BorderStyle.SOLID);
+      sheet.getRange(alvo, 1, linhas.length, 1).setNumberFormat('dd/MM/yyyy');
+      sheet.getRange(alvo, 2, linhas.length, 2).setNumberFormat('$#,##0.00');
+      sheet.getRange(alvo, 4, linhas.length, 1).setNumberFormat('0.00000000');
+      sheet.getRange(alvo, 5, linhas.length, 2).setNumberFormat('$#,##0.00');
+      // mantém a aba ordenada por data
+      var total = sheet.getLastRow() - 1;
+      if (total > 1) sheet.getRange(2, 1, total, 6).sort([{ column: 1, ascending: true }]);
+      rebuildMonthlyHistory_(ss);
+      SpreadsheetApp.flush();
+    }
+
+    var msg = (dryRun ? '[TESTE] ' : '') + linhas.length + ' dia(s) adicionado(s) ao Histórico Diário'
+      + (dryRun ? '' : ' e resumo mensal recalculado')
+      + ' · preços: ' + (fonte === 'binance' ? 'fechamento diário (fonte pública)' : 'seus próprios aportes');
+    return {
+      success: true,
+      adicionados: linhas.length,
+      primeiraData: faltantes[0],
+      ultimaData: faltantes[faltantes.length - 1],
+      fonte: fonte,
+      exemplo: linhas[linhas.length - 1],
+      message: msg
+    };
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
 function rebuildHistories() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var dailySheet = ss.getSheetByName(APP.SHEETS.DAILY);

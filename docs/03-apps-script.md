@@ -79,6 +79,22 @@ O que o `setupProject` faz (em `Code.gs`):
 - instala os três gatilhos (`installTriggers_`)
 - reconstrói os históricos diário e mensal
 
+## O menu da planilha
+
+Depois do `setupProject`, aparece o menu **₿ Satoshi Ledger**:
+
+| Item | O que faz | Onde está no código |
+|---|---|---|
+| Configurar / atualizar projeto | repete o setup (não apaga dados) | `setupProject()` |
+| **Carregar histórico de preços (1º uso)** | preenche o passado do primeiro aporte até hoje — veja [`11-historico-inicial.md`](11-historico-inicial.md) | `preencherHistoricoDiario()` |
+| Registrar snapshot agora | grava o dia no `Histórico Diário` | `recordDailySnapshot()` |
+| Reconstruir históricos | recalcula as abas automáticas | `rebuildHistories()` |
+| Backup + reconstruir históricos | copia a planilha antes de recalcular | `backupAndRebuildHistories()` |
+| Enviar relatório mensal por email | testa o envio do resumo | `enviarEmailRelatorioMensalTeste()` |
+
+> ⚠️ O item **Carregar histórico** só faz sentido **uma vez**, no começo. Rodar de
+> novo é seguro: ele apenas completa o que faltar.
+
 ## Passo F — conferir o que foi criado
 
 No editor, o painel de arquivos deve mostrar **7 arquivos**:
