@@ -3,6 +3,17 @@
 Opcional. Serve para receber o alerta do aporte da semana e o resumo do mês no
 celular.
 
+> **Onde está no código**
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `telegramSendMessage_()` (envia mensagens)
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `sendWeeklyDcaAlert()` (alerta de quarta)
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `saveIntegrationSettings()` e `getIntegrationStatus()`
+>   (gravam/lêem token e chat id nas Propriedades do script)
+> - 📄 [`src/ResumoMensal.gs`](../src/ResumoMensal.gs) → envio do resumo com gráficos
+>
+> **Nada de token no código.** O que você digita nas Configurações vai para
+> `TELEGRAM_TOKEN` e `TELEGRAM_CHAT_ID` nas Propriedades do script.
+
+
 ## 1. Criar o bot
 
 1. No Telegram, procure **@BotFather** (é o oficial, com selo azul).

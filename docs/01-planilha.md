@@ -3,6 +3,16 @@
 A planilha é o **banco de dados** do projeto. Tudo que o dashboard mostra vem
 dela. Existem 5 abas, mas você só mexe em **uma**.
 
+> **Onde está no código**
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `var APP` (bloco `SHEETS` e `HEADERS`)
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `setupProject()` (cria as abas e formata)
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `var CONTRIBUTION_ORIGIN` (as origens válidas)
+>
+> **Atalho:** você **não precisa criar as abas à mão**. Se rodar `setupProject`
+> com a planilha vazia, ele cria as 4 abas com os cabeçalhos corretos. A tabela
+> abaixo serve para conferir (ou para recriar manualmente).
+
+
 | Aba | Quem escreve | Para que serve |
 |---|---|---|
 | `Aportes` | **você** (ou o dashboard) | cada compra, venda ou ajuste |

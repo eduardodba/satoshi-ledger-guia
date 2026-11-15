@@ -1,5 +1,21 @@
 # 7. Como usar no dia a dia
 
+## Onde está no código
+
+| Ação no dashboard | Arquivo | Função |
+|---|---|---|
+| Salvar nova movimentação | [`src/Code.gs`](../src/Code.gs) | `saveContribution_()` / `addContribution()` |
+| Editar movimentação | [`src/Code.gs`](../src/Code.gs) | `updateContribution()` |
+| Excluir movimentação | [`src/Code.gs`](../src/Code.gs) | `deleteContribution()` |
+| Ajuste de caixa | [`src/Code.gs`](../src/Code.gs) | `adjustCash()` |
+| Ajuste de BTC | [`src/Code.gs`](../src/Code.gs) | `adjustCoin()` |
+| Cálculo de posição e preço médio | [`src/Code.gs`](../src/Code.gs) | `calculatePosition_()` |
+
+> A quantidade (`Qtd`) é calculada por `saveContribution_()` como
+> `valor ÷ preço`. Se você editar a planilha na mão, é você quem precisa manter
+> essa relação — veja a regra de ouro em [`01-planilha.md`](01-planilha.md).
+
+## Fluxo básico
 ## Fluxo básico
 
 1. **Comprou BTC?** Abra o dashboard → **+ Movimentação** → preencha → Salvar.

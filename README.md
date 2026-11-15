@@ -61,6 +61,39 @@ chave de API paga ou conhecimento em programação.
 
 ---
 
+## Resumo do que fazer (leia antes de começar)
+
+| O que | Onde | Ação |
+|---|---|---|
+| 4 abas com cabeçalhos | Google Sheets | **CRIAR** |
+| 7 arquivos de código | Apps Script | **CRIAR + COLAR** (conteúdo de `src/`) |
+| Fuso horário | Configurações do projeto | **SUBSTITUIR** (opcional) |
+| Janela do DCA e % do caixa especial | `Code.gs` → `var DCA_PLAN` | **SUBSTITUIR** (opcional) |
+| Token e chat id do Telegram | dashboard → Configurações | **SUBSTITUIR** (opcional) |
+| Implantação do web app | Apps Script → Implantar | **CRIAR** |
+| Gatilhos | criados por `setupProject` | automático |
+
+### Mapa: qual arquivo colar em qual lugar
+
+| Arquivo do repositório | Crie no editor como | Tipo | Obrigatório |
+|---|---|---|---|
+| [`src/Code.gs`](src/Code.gs) | `Code` (o `Código.gs` que já existe) | Script | **sim** |
+| [`src/Dashboard.html`](src/Dashboard.html) | `Dashboard` | **HTML** | **sim** |
+| [`src/Email.gs`](src/Email.gs) | `Email` | Script | **sim** |
+| [`src/ResumoMensal.gs`](src/ResumoMensal.gs) | `ResumoMensal` | Script | opcional |
+| [`src/GravaHistoricoDario.gs`](src/GravaHistoricoDario.gs) | `GravaHistoricoDario` | Script | opcional |
+| [`src/GravaHistoricoMensal.gs`](src/GravaHistoricoMensal.gs) | `GravaHistoricoMensal` | Script | opcional |
+| [`src/Cotacao.gs`](src/Cotacao.gs) | `Cotacao` | Script | opcional |
+
+> O `src/appsscript.json` **não** é colado: ele é o manifesto do projeto (só é
+> usado se você clonar com `clasp`). O fuso você ajusta em
+> **Arquivo → Configurações do projeto**.
+
+Cada documento abaixo repete esses apontamentos no ponto exato, com o bloco
+**“Onde está no código”**.
+
+---
+
 ## Passo 1 — Criar a planilha
 
 1. Abra <https://sheets.new> (cria uma planilha em branco).
@@ -111,7 +144,7 @@ arquivo faz: [`docs/03-apps-script.md`](docs/03-apps-script.md)
 ## Passo 3 — Configurar o projeto
 
 1. No editor do Apps Script, selecione a função **`setupProject`** na barra
-   superior e clique em **Executar**.
+   superior e clique em **Executar** (ela está em `src/Code.gs`).
 2. O Google vai pedir autorização:
    - **Revisar permissões** → escolha sua conta
    - **Avançado** → **Acessar (não seguro)** — é normal, o script é seu
@@ -197,7 +230,8 @@ um resumo mensal.
 
 ## Passo 7 — Deixar rodando sozinho
 
-O `setupProject` já cria os gatilhos:
+O `setupProject` já cria os gatilhos — todos definidos na função
+`installTriggers_()` de `src/Code.gs`:
 
 | Quando | O que faz |
 |---|---|

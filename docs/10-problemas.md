@@ -1,5 +1,16 @@
 # 10. Problemas comuns
 
+## Antes de tudo: onde olhar
+
+| Sintoma | Primeiro lugar | Função/arquivo |
+|---|---|---|
+| menu não aparece | planilha recarregada? | `onOpen()` em `src/Code.gs` |
+| erro ao abrir o dashboard | implantação/arquivo HTML | `doGet()` em `src/Code.gs` |
+| número estranho no PM | dados da aba `Aportes` | `calculatePosition_()` |
+| DCA não aparece | janela/estado do ciclo | `buildAccumulationPlan_()` |
+| Telegram não envia | propriedades | `getIntegrationStatus()` |
+| histórico parado | gatilho | `installTriggers_()` / `recordDailySnapshot` |
+
 ## Dashboard
 
 | Sintoma | Causa | Solução |

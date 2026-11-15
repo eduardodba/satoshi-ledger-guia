@@ -3,6 +3,12 @@
 O dashboard é um **app da Web** do Apps Script: uma URL que abre a página e fala
 com a planilha por baixo.
 
+> **Onde está no código**
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `doGet()` (entrega a página `Dashboard`)
+> - 📄 [`src/Email.gs`](../src/Email.gs) → `urlDashboard_()` (usa a URL atual da
+>   implantação; **não** tem URL fixa — não é preciso substituir nada ao publicar)
+
+
 ## Publicando
 
 1. No editor do Apps Script: **Implantar → Nova implantação**.

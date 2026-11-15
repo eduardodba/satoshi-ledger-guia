@@ -14,6 +14,19 @@ que precisa de um token que *você* cria (veja [`06-telegram.md`](06-telegram.md
 | bitcoin-data.com | realized price, STH, LTH, MVRV | não | moderado (cache de 6 h) |
 | Telegram | enviar alertas | **sim** (token do seu bot) | ~30 msg/s |
 
+## Onde está no código
+
+| Assunto | Arquivo | Função |
+|---|---|---|
+| Preço do BTC e do dólar | [`src/Code.gs`](../src/Code.gs) | `getMarketSnapshot_()` |
+| Altura do bloco / halving | [`src/Code.gs`](../src/Code.gs) | `fetchLiveHalvingData_()`, `fetchHalvingBlockchainInfo_()`, `fetchHalvingMempool_()`, `montarProjecaoHalving_()` |
+| Dados on-chain (realized, STH, LTH, MVRV) | [`src/Code.gs`](../src/Code.gs) | `getOnChainSnapshot_()`, `getCachedOnChainSnapshot_()` |
+| Envio ao Telegram | [`src/Code.gs`](../src/Code.gs) | `telegramSendMessage_()` |
+
+> Para **substituir** uma fonte, edite só a função correspondente. Mantenha o
+> cache (`APP.CACHE`) e o `try/catch` com fallback, senão o dashboard fica sem
+> número quando a API falha.
+
 ## Como o app se protege de falhas
 
 Cada chamada tem **cache** e **fallback**:

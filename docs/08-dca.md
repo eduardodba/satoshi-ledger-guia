@@ -3,6 +3,34 @@
 DCA (*Dollar Cost Averaging*) é aportar um valor fixo em intervalos regulares,
 ignorando o preço. Aqui o DCA é organizado em **ciclos de halving**.
 
+> **Onde está no código**
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `var DCA_PLAN` (as três constantes que definem a janela)
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `buildAccumulationPlan_()` (calcula cota, caixa e janela)
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `cashBuysThisWeekUsd_()` (quanto já foi aportado na semana)
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `getWeeklyFixedUsd_()` / `recomputeWeeklyFixed_()` (cota fixa)
+> - 📄 [`src/Dashboard.html`](../src/Dashboard.html) → `buildDca()`, `renderDcaPlan()`, `renderDcaChart()`
+
+## O que você pode SUBSTITUIR
+
+Todas as regras do DCA estão em três números, no topo do `Code.gs`:
+
+```js
+var DCA_PLAN = Object.freeze({
+  START_DAYS_BEFORE_HALVING: 725,   // início da janela
+  END_DAYS_BEFORE_HALVING: 500,     // fim da janela
+  SPECIAL_PCT: 0.20                 // 20% do caixa vai para o caixa especial
+});
+```
+
+| Constante | Efeito de mudar |
+|---|---|
+| `START_DAYS_BEFORE_HALVING` | antecipa/atrasa o começo do ciclo (janela maior = cota menor) |
+| `END_DAYS_BEFORE_HALVING` | antecipa/atrasa o fim do ciclo |
+| `SPECIAL_PCT` | quanto do caixa fica reservado para oportunidade |
+
+Depois de mudar, salve, rode `setupProject` e recarregue o dashboard.
+
+
 ## A janela do ciclo
 
 ```

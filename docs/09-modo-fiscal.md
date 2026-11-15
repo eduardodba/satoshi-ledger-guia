@@ -4,6 +4,20 @@ O projeto tem um “caderno separado” para o que você pretende declarar. Ele 
 **independente**: nada do que você faz ali altera saldo, preço médio da carteira
 ou patrimônio.
 
+> **Onde está no código**
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `setIrpfFlag()` (marca/desmarca uma compra do ledger)
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `setIrpfOverride()` / `removeIrpfOverride()` (edita preço/quantidade no painel)
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `setIrpfHidden()` / `limparIrpfHidden()` (esconde sem apagar)
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `setIrpfPm()` (preço médio declarado manualmente)
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `saveIrpfExtra()` / `removeIrpfExtra()` (compras só do caderno fiscal)
+> - 📄 [`src/Code.gs`](../src/Code.gs) → `rebuildIrpfSheet_()` (regenera a aba `IRPF`)
+> - 📄 [`src/Dashboard.html`](../src/Dashboard.html) → `irpfItems()`, `renderBandit()`
+>
+> Os dados ficam em **Propriedades do script**: `IRPF_FLAG`, `IRPF_ITEMS`,
+> `IRPF_HIDDEN`, `IRPF_EXTRA`, `IRPF_PM`. Não edite a aba `IRPF` à mão: ela é
+> sobrescrita por `rebuildIrpfSheet_()`.
+
+
 ## Como abrir
 
 No dashboard, clique no ícone de **máscara** (ao lado do tema). Abre o **painel
