@@ -12,8 +12,10 @@ celular.
 5. Ele responde com o **token**, algo assim:
 
 ```
-1234567890:AAH3xY9kPq7LmN2vB8sT4uW6zR1cD5eF7gH
+<SEU_TOKEN>
 ```
+
+O formato é `números:letras` (ex.: uma sequência longa depois dos dois pontos).
 
 > Trate esse token como senha: quem tem o token controla o bot. Se vazar, use
 > `/revoke` no BotFather para gerar outro.
