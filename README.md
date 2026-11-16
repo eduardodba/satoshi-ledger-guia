@@ -19,18 +19,19 @@ assinatura, nenhum servidor, nenhum cartão de crédito — só uma conta Google
 
 **No computador:**
 
-![Dashboard no computador](images/dashboard-pc.jpg)
+![Dashboard no computador](images/pc-resumo.jpg)
 
 **No celular:**
 
 <p>
-<img src="images/dashboard-celular-1.jpg" width="260" alt="Dashboard no celular — resumo">
-<img src="images/dashboard-celular-2.jpg" width="260" alt="Dashboard no celular — DCA">
-<img src="images/dashboard-celular-3.jpg" width="260" alt="Dashboard no celular — movimentações">
+<img src="images/celular-resumo.jpg" width="200" alt="Resumo">
+<img src="images/celular-dca.jpg" width="200" alt="DCA">
+<img src="images/celular-movimentacoes.jpg" width="200" alt="Movimentações">
 </p>
 
-> Todas as imagens acima foram geradas com **dados fictícios**. Nenhum dado real
-> de nenhuma pessoa aparece neste repositório.
+> Todas as imagens deste repositório foram geradas com **dados fictícios** e
+> nenhuma contém informação real de qualquer pessoa. Veja a galeria completa em
+> [Telas do dashboard](#telas-do-dashboard).
 
 ### O que o dashboard mostra
 
@@ -304,6 +305,45 @@ médio do que foi declarado.
 📖 [`docs/09-modo-fiscal.md`](docs/09-modo-fiscal.md)
 
 ---
+
+## Telas do dashboard
+
+Todas as capturas abaixo usam o **tema escuro** e **dados fictícios**.
+
+### Computador
+
+| Resumo | Performance |
+|---|---|
+| ![Resumo](images/pc-resumo.jpg) | ![Performance](images/pc-performance.jpg) |
+
+| DCA | Rentabilidade mensal |
+|---|---|
+| ![DCA](images/pc-dca.jpg) | ![Mensal](images/pc-mensal.jpg) |
+
+**Movimentações**
+
+![Movimentações](images/pc-movimentacoes.jpg)
+
+**Análise detalhada** (botão de gráfico no topo)
+
+![Análise](images/pc-analise.jpg)
+
+**Régua de medição** (duplo clique no gráfico → botão Régua)
+
+![Régua](images/pc-regua.jpg)
+
+### Celular
+
+<p>
+<img src="images/celular-resumo.jpg" width="240" alt="Resumo no celular">
+<img src="images/celular-performance.jpg" width="240" alt="Performance no celular">
+<img src="images/celular-dca.jpg" width="240" alt="DCA no celular">
+</p>
+
+<p>
+<img src="images/celular-mensal.jpg" width="240" alt="Mensal no celular">
+<img src="images/celular-movimentacoes.jpg" width="240" alt="Movimentações no celular">
+</p>
 
 ## Rotina de uso
 
