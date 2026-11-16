@@ -51,6 +51,25 @@ O dashboard recalcula tudo sozinho ao salvar.
 Escolher errado não “quebra” a carteira, mas distorce o DCA: `Caixa` conta na
 cota semanal; `Especial` não conta.
 
+## Régua de medição (gráficos ampliados)
+
+Nos gráficos **Patrimônio × custo** e **BTC × preço médio**, quando você abre em
+tela cheia (duplo clique), aparece o botão **Régua** no topo:
+
+1. Clique em **Régua** (o botão fica azul).
+2. Clique no **ponto inicial** e depois no **ponto final** do trecho.
+3. Aparece uma caixa com o período, a **variação em %** e a diferença em valor.
+
+- Um novo clique recomeça a medição.
+- Fechar a tela cheia desliga a régua.
+- No celular, use dois toques (o gráfico aparece girado em paisagem).
+- Enquanto a régua está ativa, o tooltip do gráfico fica desligado para não
+  sobrepor a caixa de medição.
+
+> No gráfico de **patrimônio**, a variação em % inclui os aportes do período — é a
+> variação do patrimônio, não a rentabilidade. Para rentabilidade, use o mapa de
+> calor mensal.
+
 ## Entendendo os números do topo
 
 | Número | O que é |
