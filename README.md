@@ -329,6 +329,10 @@ Todas as capturas abaixo usam o **tema escuro** e **dados fictícios**.
 
 ![Análise](images/pc-analise.jpg)
 
+**Notificações** (ícone de sino no topo)
+
+![Notificações](images/pc-notificacoes.jpg)
+
 **Régua de medição** (duplo clique no gráfico → botão Régua)
 
 ![Régua](images/pc-regua.jpg)

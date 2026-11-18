@@ -64,6 +64,8 @@ Se a mensagem chegar, está pronto.
 
 ## Painel de notificações (no dashboard)
 
+![Painel de notificações](../images/pc-notificacoes.jpg)
+
 Clique no ícone de **sino** no topo do dashboard. O painel tem duas partes:
 
 **Canais**
