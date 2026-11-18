@@ -45,6 +45,7 @@ assinatura, nenhum servidor, nenhum cartão de crédito — só uma conta Google
 | **Movimentações** | histórico completo com edição e exclusão |
 | **Análise detalhada** | insights da carteira, do DCA e projeção de cenários |
 | **Modo fiscal** | controle separado do que você declara à Receita |
+| **Notificações** | liga/desliga canais (Telegram, e-mail) e tipos de aviso |
 
 ---
 
@@ -244,8 +245,8 @@ um resumo mensal.
 2. Mande uma mensagem qualquer para o seu bot.
 3. Descubra seu **chat id** abrindo:
    `https://api.telegram.org/bot<SEU_TOKEN>/getUpdates` e procure `"chat":{"id":...}`.
-4. No dashboard, abra o ícone de engrenagem (**Configurações**) e cole o token e
-   o chat id. Salve.
+4. No dashboard, clique no ícone de **sino** (Notificações) e cole o token e o
+   chat id. Salve — é o mesmo painel onde você liga/desliga cada tipo de aviso.
 5. Teste pelo menu da planilha: **₿ Satoshi Ledger → Enviar alerta de teste**.
 
 📖 [`docs/06-telegram.md`](docs/06-telegram.md) — inclui como criar o bot do zero.

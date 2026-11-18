@@ -10,7 +10,7 @@
  */
 
 var APP = Object.freeze({
-  VERSION: '2.21.0',
+  VERSION: '2.22.0',
   SHEETS: {
     IRPF: 'IRPF',
     CONTRIBUTIONS: 'Aportes',
@@ -42,6 +42,12 @@ var APP = Object.freeze({
     SPECIAL_INITIALIZED: 'SPECIAL_INITIALIZED',
     LAST_SPECIAL_REBALANCE: 'LAST_SPECIAL_REBALANCE',
     GOAL_BTC: 'GOAL_BTC',
+    NOTIFY_TELEGRAM: 'NOTIFY_TELEGRAM',
+    NOTIFY_EMAIL: 'NOTIFY_EMAIL',
+    NOTIFY_DCA: 'NOTIFY_DCA',
+    NOTIFY_WEEKLY: 'NOTIFY_WEEKLY',
+    NOTIFY_MONTHLY: 'NOTIFY_MONTHLY',
+    NOTIFY_APORTES: 'NOTIFY_APORTES',
     LAST_FX: 'LAST_FX'
   }
 });
@@ -169,6 +175,9 @@ function installTriggers_() {
   ensureTrigger_('sendWeeklyDcaAlert', function () {
     ScriptApp.newTrigger('sendWeeklyDcaAlert').timeBased().onWeekDay(ScriptApp.WeekDay.WEDNESDAY).atHour(13).create();
   });
+  ensureTrigger_('sendWeeklySummary', function () {
+    ScriptApp.newTrigger('sendWeeklySummary').timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(20).create();
+  });
   // Caixa especial é manual (botões no card) — sem trigger de rebalanceamento.
 
   if (failed.length) {
@@ -259,6 +268,88 @@ function formatSheets_(ss) {
 // -----------------------------------------------------------------------------
 // CONFIGURAÇÕES SEGURAS
 // -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// PREFERÊNCIAS DE NOTIFICAÇÃO
+// -----------------------------------------------------------------------------
+//
+// Cada tipo de aviso pode ser ligado/desligado, e cada canal (Telegram/email)
+// também. Padrão: Telegram e email ligados; DCA e mensal ligados; resumo semanal
+// e confirmação de aporte desligados (para não encher a caixa de entrada).
+
+var NOTIF_DEFAULTS = { telegram: true, email: true, dca: true, weekly: false, monthly: true, aportes: false };
+
+function notifBool_(prop, padrao) {
+  var raw = PropertiesService.getScriptProperties().getProperty(prop);
+  if (raw === null || raw === undefined || raw === '') return padrao;
+  return String(raw) === 'on';
+}
+function notifLigada_(tipo) {
+  var P = APP.PROPERTIES, d = NOTIF_DEFAULTS;
+  if (tipo === 'dca' && !notifBool_(P.NOTIFY_DCA, d.dca)) return false;
+  if (tipo === 'weekly' && !notifBool_(P.NOTIFY_WEEKLY, d.weekly)) return false;
+  if (tipo === 'monthly' && !notifBool_(P.NOTIFY_MONTHLY, d.monthly)) return false;
+  if (tipo === 'aportes' && !notifBool_(P.NOTIFY_APORTES, d.aportes)) return false;
+  if (tipo === 'monthly') return notifBool_(P.NOTIFY_EMAIL, d.email);
+  return notifBool_(P.NOTIFY_TELEGRAM, d.telegram);
+}
+
+/** Estado completo das notificações (usado pelo painel). */
+function getNotificationSettings() {
+  var P = APP.PROPERTIES, d = NOTIF_DEFAULTS;
+  var props = PropertiesService.getScriptProperties();
+  var chatId = props.getProperty(P.TELEGRAM_CHAT_ID) || '';
+  var token = props.getProperty(P.TELEGRAM_TOKEN) || '';
+  var emailTo = '';
+  try { emailTo = donoDaConta_(); } catch (e) { emailTo = props.getProperty('EMAIL_DESTINO') || ''; }
+  return {
+    telegram: {
+      enabled: notifBool_(P.NOTIFY_TELEGRAM, d.telegram),
+      configured: Boolean(token && chatId),
+      chatMasked: chatId ? maskValue_(chatId) : '',
+      hasToken: Boolean(token)
+    },
+    email: { enabled: notifBool_(P.NOTIFY_EMAIL, d.email), to: emailTo },
+    types: {
+      dca: notifBool_(P.NOTIFY_DCA, d.dca),
+      weekly: notifBool_(P.NOTIFY_WEEKLY, d.weekly),
+      monthly: notifBool_(P.NOTIFY_MONTHLY, d.monthly),
+      aportes: notifBool_(P.NOTIFY_APORTES, d.aportes)
+    }
+  };
+}
+
+/** Salva as preferências vindas do painel. */
+function saveNotificationSettings(payload) {
+  payload = payload || {};
+  var P = APP.PROPERTIES;
+  var props = PropertiesService.getScriptProperties();
+  var liga = function (prop, valor) { props.setProperty(prop, valor ? 'on' : 'off'); };
+
+  if (payload.telegramEnabled !== undefined) liga(P.NOTIFY_TELEGRAM, !!payload.telegramEnabled);
+  if (payload.emailEnabled !== undefined) liga(P.NOTIFY_EMAIL, !!payload.emailEnabled);
+  if (payload.dca !== undefined) liga(P.NOTIFY_DCA, !!payload.dca);
+  if (payload.weekly !== undefined) liga(P.NOTIFY_WEEKLY, !!payload.weekly);
+  if (payload.monthly !== undefined) liga(P.NOTIFY_MONTHLY, !!payload.monthly);
+  if (payload.aportes !== undefined) liga(P.NOTIFY_APORTES, !!payload.aportes);
+
+  if (payload.telegramToken) {
+    var token = String(payload.telegramToken).trim();
+    if (!/^\d+:[A-Za-z0-9_-]{20,}$/.test(token)) throw new Error('Token do Telegram inválido.');
+    props.setProperty(P.TELEGRAM_TOKEN, token);
+  }
+  if (payload.telegramChatId) {
+    var chatId = String(payload.telegramChatId).trim();
+    if (!/^-?\d+$/.test(chatId)) throw new Error('Chat ID do Telegram inválido.');
+    props.setProperty(P.TELEGRAM_CHAT_ID, chatId);
+  }
+  if (payload.emailTo !== undefined && String(payload.emailTo).trim() !== '') {
+    var email = String(payload.emailTo).trim();
+    if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) throw new Error('E-mail inválido.');
+    props.setProperty('EMAIL_DESTINO', email);
+  }
+  return { success: true, message: 'Notificações atualizadas.', settings: getNotificationSettings() };
+}
 
 function getIntegrationStatus() {
   var props = PropertiesService.getScriptProperties();
@@ -1645,6 +1736,13 @@ function saveContribution_(payload, rowNumber) {
 
     rebuildHistoriesUnlocked_(ss);
     rebuildIrpfSheet_(ss);
+
+    // Aviso opcional no Telegram (só em movimentação nova, não em edição).
+    if (!rowNumber) {
+      var novas = readContributions_(ss);
+      var criada = novas.filter(function (c) { return c.row === targetRow; })[0];
+      if (criada && criada.amountUsd) notificarAporte_(novas, criada);
+    }
     return { success: true, message: rowNumber ? 'Movimentação atualizada.' : 'Movimentação registrada.' };
   } finally {
     lock.releaseLock();
@@ -2309,6 +2407,7 @@ function dcaWeeklyMessage_(plan, market) {
  * Usa o halving AO VIVO (altura real do bloco) para a decisão de período.
  */
 function sendWeeklyDcaAlert() {
+  if (!notifLigada_('dca')) return { skipped: true, message: 'Alerta de DCA desativado nas notificações.' };
   var config = getTelegramConfig_();
   if (!config.token || !config.chatId) return { skipped: true, message: 'Telegram não configurado.' };
 
@@ -2340,8 +2439,83 @@ function sendWeeklyDcaAlert() {
   }
   if (!plan.active) return { skipped: true, message: 'Fora da janela de DCA (' + plan.reason + ').' };
 
+  // Semana já cumprida (ou nada pendente): não incomoda.
+  if (plan.weekComplete === true || !(plan.suggestedUsd > 0)) {
+    return { skipped: true, message: 'Semana já concluída — alerta não enviado.' };
+  }
+
   telegramSendMessage_(dcaWeeklyMessage_(plan, market));
   return { success: true, message: 'Aporte da semana enviado.' };
+}
+
+/** Resumo semanal (domingo à noite) — Telegram. Respeita o interruptor do tipo. */
+function sendWeeklySummary() {
+  if (!notifLigada_('weekly')) return { skipped: true, message: 'Resumo semanal desativado nas notificações.' };
+  var config = getTelegramConfig_();
+  if (!config.token || !config.chatId) return { skipped: true, message: 'Telegram não configurado.' };
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var market = getMarketSnapshot_();
+  var contributions = readContributions_(ss);
+  var pos = calculatePosition_(contributions, market.btcUsd);
+
+  // variação do patrimônio nos últimos 7 dias (histórico diário)
+  var diario = readDailyHistory_(ss);
+  var semanaAtras = diario.length ? diario[Math.max(0, diario.length - 8)] : null;
+  var base = semanaAtras ? Number(semanaAtras.balanceUsd) : 0;
+  var varPct = base > 0 ? (pos.marketValueUsd / base - 1) * 100 : null;
+
+  // aportes dos últimos 7 dias
+  var hoje = toIsoDate_(new Date());
+  var limite = toIsoDate_(new Date(Date.now() - 7 * 86400000));
+  var semana = contributions.filter(function (c) {
+    return c.date >= limite && c.date <= hoje && !c.isAdjustment && !c.isCoinAdjustment && c.amountUsd > 0;
+  });
+  var aportado = semana.reduce(function (s2, c) { return s2 + Number(c.amountUsd); }, 0);
+
+  // status do DCA
+  var dcaTxt = 'fora da janela';
+  try {
+    var cash = calculateCash_(contributions, market);
+    var plan = buildAccumulationPlan_(market, cash, getCachedHalvingData_(), contributions);
+    if (plan.active) {
+      dcaTxt = plan.weekComplete ? 'semana concluída ✓' : 'faltam ' + formatMoney_(plan.suggestedUsd, 'USD');
+    } else if (plan.reason === 'no-cash') {
+      dcaTxt = 'sem caixa';
+    }
+  } catch (e) {}
+
+  var linhas = [
+    '<b>₿ SATOSHI LEDGER · RESUMO DA SEMANA</b>',
+    '',
+    'Patrimônio: <b>' + formatMoney_(pos.marketValueUsd, 'USD') + '</b>' + (varPct === null ? '' : '  (' + (varPct >= 0 ? '+' : '') + varPct.toFixed(1) + '% na semana)'),
+    'BTC: <code>' + pos.quantityBtc.toFixed(8) + '</code> · PM <code>' + formatMoney_(pos.averagePrice, 'USD') + '</code>',
+    '',
+    'Aportado na semana: <b>' + formatMoney_(aportado, 'USD') + '</b>' + (semana.length ? ' em ' + semana.length + (semana.length === 1 ? ' aporte' : ' aportes') : ''),
+    'DCA: ' + dcaTxt
+  ];
+  telegramSendMessage_(linhas.join('\n'));
+  return { success: true, message: 'Resumo semanal enviado.' };
+}
+
+/** Confirmação curta no Telegram a cada movimentação registrada (opcional). */
+function notificarAporte_(contributions, item) {
+  try {
+    if (!notifLigada_('aportes')) return;
+    var market = getMarketSnapshot_();
+    var pos = calculatePosition_(contributions, market.btcUsd);
+    var venda = Number(item.amountUsd) < 0;
+    telegramSendMessage_([
+      '<b>₿ SATOSHI LEDGER · ' + (venda ? 'VENDA REGISTRADA' : 'APORTE REGISTRADO') + '</b>',
+      '',
+      (venda ? '−' : '+') + formatMoney_(Math.abs(item.amountUsd), 'USD') + '  ·  <code>' + Math.abs(item.quantity).toFixed(8) + ' BTC</code>',
+      'Preço: <code>' + formatMoney_(item.priceUsd, 'USD') + '</code>',
+      '',
+      'Novo patrimônio: <b>' + formatMoney_(pos.marketValueUsd, 'USD') + '</b>'
+    ].join('\n'));
+  } catch (e) {
+    console.warn('notificarAporte_ falhou: ' + e.message);
+  }
 }
 
 /** Botão de teste do modal de ajuda: envia uma mensagem de teste ao Telegram. */
@@ -2363,6 +2537,7 @@ function sendDcaTestAlert() {
 // -----------------------------------------------------------------------------
 
 function sendMonthlyReportIfNeeded() {
+  if (!notifLigada_('monthly')) return { success: true, skipped: true, message: 'Relatório mensal desativado nas notificações.' };
   var now = new Date();
   var tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   if (tomorrow.getDate() !== 1) return { success: true, skipped: true, message: 'Hoje não é o último dia do mês.' };

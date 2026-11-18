@@ -62,6 +62,39 @@ Pela planilha: menu **₿ Satoshi Ledger → Enviar relatório mensal por email*
 
 Se a mensagem chegar, está pronto.
 
+## Painel de notificações (no dashboard)
+
+Clique no ícone de **sino** no topo do dashboard. O painel tem duas partes:
+
+**Canais**
+
+| Canal | O que faz |
+|---|---|
+| **Telegram** | alertas curtos no celular (token + chat id ficam aqui) |
+| **E-mail** | relatório mensal completo (endereço configurável) |
+
+**Tipos de aviso**
+
+| Tipo | Canal | Quando |
+|---|---|---|
+| **Alerta de DCA** | Telegram | quarta — **só se ainda faltar aportar na semana** |
+| **Resumo semanal** | Telegram | domingo à noite, com patrimônio e aportes da semana |
+| **Relatório mensal** | E-mail | dia 1º, fechamento do mês |
+| **Confirmação de aporte** | Telegram | a cada movimentação registrada |
+
+Padrões de fábrica: DCA e mensal **ligados**; resumo semanal e confirmação de
+aporte **desligados**.
+
+> Desligar o canal **Telegram** desativa de uma vez todos os avisos que passam por
+> ele, mesmo que o tipo esteja ligado. O mesmo vale para o e-mail.
+
+Onde está no código:
+
+- 📄 [`src/Code.gs`](../src/Code.gs) → `getNotificationSettings()` e `saveNotificationSettings()`
+- 📄 [`src/Code.gs`](../src/Code.gs) → `notifLigada_()` (usado por cada envio)
+- 📄 [`src/Code.gs`](../src/Code.gs) → `sendWeeklyDcaAlert()`, `sendWeeklySummary()`, `notifyAporte_()`
+- 📄 [`src/Dashboard.html`](../src/Dashboard.html) → `openNotif()`, `renderNotif()`, `saveNotif()`
+
 ## O que o bot envia
 
 | Mensagem | Quando |

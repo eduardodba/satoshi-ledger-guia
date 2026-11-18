@@ -17,13 +17,14 @@ a função `installTriggers_()` cria três gatilhos:
 |---|---|---|
 | `recordDailySnapshot` | todo dia ~21h | grava a linha do dia no `Histórico Diário` |
 | `sendMonthlyReportIfNeeded` | todo dia ~22h | no dia 1º, envia o resumo do mês por email |
-| `sendWeeklyDcaAlert` | toda quarta ~13h | manda o aporte da semana no Telegram |
+| `sendWeeklyDcaAlert` | toda quarta ~13h | manda o aporte da semana no Telegram (**só se faltar aportar**) |
+| `sendWeeklySummary` | todo domingo ~20h | resumo da semana no Telegram (se ativado no painel) |
 
 > O horário é aproximado: o Google escolhe o minuto dentro daquela hora. O fuso
 > é o das **Configurações do projeto** (veja [`03`](03-apps-script.md)).
 
-Você **não precisa criar nada à mão** se usou o `setupProject`. Os três já estão
-ativos.
+Você **não precisa criar nada à mão** se usou o `setupProject`. Os quatro já estão
+ativos (o resumo semanal só envia se estiver ligado no painel de notificações).
 
 ## Como conferir
 
