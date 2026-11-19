@@ -55,7 +55,8 @@
     .hero-metric{padding:0 26px;position:relative}.hero-metric:first-child{padding-left:16px}.hero-metric+.hero-metric:before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:1px;background:var(--border)}
     .hero-metric .hm-label{font-size:9px;letter-spacing:.6px;text-transform:uppercase;font-weight:700;color:var(--soft)}
     .hero-metric .hm-value{font-size:clamp(18px,1.8vw,23px);font-weight:760;margin-top:8px;letter-spacing:-.4px;font-variant-numeric:tabular-nums}.hero-metric .hm-value.btc-color{color:var(--btc)}
-    .hero-side{padding:24px;display:flex;flex-direction:column;justify-content:space-between}.goal-head{display:flex;justify-content:space-between;align-items:start}.goal-head strong{font-size:26px}.goal-track{height:8px;background:var(--surface-3);border-radius:99px;overflow:hidden;margin:16px 0 9px}.goal-fill{height:100%;background:linear-gradient(90deg,var(--btc),var(--btc-2));border-radius:99px;box-shadow:0 0 14px rgba(245,158,11,.35)}.goal-meta{display:flex;justify-content:center;color:var(--muted);font-size:10px}
+    .hero-side{padding:24px;display:flex;flex-direction:column;justify-content:space-between}.goal-head{display:flex;justify-content:space-between;align-items:start}.goal-head strong{font-size:26px}.goal-track{height:8px;background:var(--surface-3);border-radius:99px;overflow:hidden;margin:16px 0 9px}.goal-fill{height:100%;background:linear-gradient(90deg,var(--btc),var(--btc-2));border-radius:99px;box-shadow:0 0 14px rgba(245,158,11,.35)}.goal-meta{display:flex;justify-content:center;color:var(--muted);font-size:10px;text-align:center;padding:0 6px}
+    .goal-fiat{display:block;margin-top:3px;font-size:11px;font-weight:800;color:var(--text)}
     .goal-block{display:flex;flex-direction:column}.goal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
     .gauge{position:relative;width:100%;max-width:280px;margin:2px auto 4px}.gauge-svg{display:block;width:100%;height:auto;overflow:visible}
     .gauge-track{fill:none;stroke:var(--surface-3);stroke-width:14;stroke-linecap:round}
@@ -988,7 +989,20 @@
     const fmtBtc=v=>v.toFixed(4).replace(/\.?0+$/,'');
     if(pctEl)pctEl.textContent=pct.toFixed(1)+'%';
     if(titleEl)titleEl.textContent=fmtBtc(goal);
-    if(remEl)remEl.textContent=remaining<=0?'Meta batida · próxima em '+fmtBtc(goal+GOAL_STEP)+' ₿':'Faltam '+fmtBtc(remaining)+' ₿ para '+fmtBtc(goal)+' ₿';
+    if(remEl){
+      if(remaining<=0){
+        remEl.textContent='Meta batida · próxima em '+fmtBtc(goal+GOAL_STEP)+' ₿';
+      }else{
+        var txt='Faltam '+fmtBtc(remaining)+' ₿ para '+fmtBtc(goal)+' ₿';
+        // equivalente em dinheiro da moeda escolhida no dashboard
+        if(state.currency!=='BTC'){
+          var preco=n(state.currency==='BRL'?(state.data.market.btcBrl||n(state.data.market.btcUsd)*n(state.data.market.usdBrl)):state.data.market.btcUsd);
+          var falta=remaining*preco;
+          if(falta>0) txt+='<span class="goal-fiat">≈ '+directMoney(falta,state.currency==='BRL'?'BRL':'USD')+'</span>';
+        }
+        remEl.innerHTML=txt;
+      }
+    }
     const len=fill.getTotalLength?fill.getTotalLength():251.33;
     fill.style.setProperty('--gauge-len',len);
     const target=Math.max(0,Math.min(1,pct/100));
