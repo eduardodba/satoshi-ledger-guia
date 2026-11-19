@@ -307,6 +307,21 @@ médio do que foi declarado.
 
 ---
 
+## Novidades
+
+Veja o histórico completo em **[CHANGELOG.md](CHANGELOG.md)**.
+
+**Últimas atualizações (nov/2026):**
+
+| Versão | O que entrou |
+|---|---|
+| **2.26** | quanto falta para a meta também em R$ / US$ |
+| **2.25** | modo bandido em faixa: BTC declarado, total pago, total atual e PM |
+| **2.24** | planilha padronizada (fonte, cores, espaçamento) e coluna Dólar em Movimentações |
+| **2.23** | coluna `Dólar R$` nos Aportes, preenchida automaticamente |
+| **2.22** | painel de notificações e alerta de DCA só quando falta aportar |
+| **2.21** | régua de medição nos gráficos ampliados |
+
 ## Telas do dashboard
 
 Todas as capturas abaixo usam o **tema escuro** e **dados fictícios**.
