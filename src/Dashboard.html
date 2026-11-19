@@ -409,7 +409,30 @@
     .bp-card .k{font-size:8.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:750}
     .bp-card .v{font-size:17px;font-weight:760;margin-top:5px;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
     .bp-card .s{font-size:9px;color:var(--soft);margin-top:2px}
-    .bp-pm{margin-top:10px;padding:13px 14px;border:1px dashed rgba(247,147,26,.36);border-radius:12px;background:rgba(247,147,26,.045)}
+    .bp-strip{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;border:1px solid var(--border);border-radius:13px;overflow:hidden}
+    .bp-cell{padding:13px 15px;border-right:1px solid var(--border);min-width:0}
+    .bp-cell:last-child{border-right:0}
+    .bp-cell.bp-hero{background:linear-gradient(180deg,rgba(247,147,26,.09),rgba(247,147,26,.02))}
+    .bp-k{display:flex;align-items:center;font-size:7.5px;font-weight:800;letter-spacing:.75px;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+    .bp-v{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.5px;margin-top:5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+    .bp-hero .bp-v{font-size:23px;letter-spacing:-.8px}
+    .bp-v.positive{color:var(--green)}.bp-v.negative{color:var(--red)}
+    .bp-s{font-size:8.5px;color:var(--soft);margin-top:3px;white-space:nowrap}
+    .bp-cell .bp-edit{display:none}
+    .bp-cell.editing .bp-v,.bp-cell.editing .bp-s{display:none}
+    .bp-cell.editing .bp-edit{display:flex;margin-top:8px;gap:6px;align-items:center}
+    .bp-cell .bp-edit input{width:92px;padding:6px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:11px}
+    .bp-var{display:flex;align-items:center;gap:9px;padding:10px 2px 2px;flex-wrap:wrap}
+    .bp-var-txt{font-size:9.5px;color:var(--soft)}
+    .bp-var-txt b{color:var(--text)}
+    @media(max-width:820px){
+      .bp-strip{grid-template-columns:1fr 1fr}
+      .bp-cell{border-bottom:1px solid var(--border)}
+      .bp-cell:nth-child(2n){border-right:0}
+      .bp-cell:nth-child(n+3){border-bottom:0}
+      .bp-hero .bp-v{font-size:19px}
+      .bp-v{font-size:15px}
+    }
     .bp-pm .calc{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:6px}
     .bp-pm .lbl{display:flex;align-items:center;gap:8px;font-size:8.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:750}
     .bp-pm .big{font-size:21px;font-weight:770;letter-spacing:-.5px;margin-top:6px;font-variant-numeric:tabular-nums}
@@ -1099,6 +1122,12 @@
     const usd=it.reduce((a,t)=>a+valorDe(t),0);
     const brl=it.reduce((a,t)=>a+valorDe(t)*(t.ledger&&n(t.priceBrl)&&n(t.priceUsd)?n(t.priceBrl)/n(t.priceUsd):fx),0);
     const pm=qty>0?usd/qty:0,pmBrl=qty>0?brl/qty:0,fxMedio=usd>0?brl/usd:0;
+    // valor de mercado hoje das mesmas moedas declaradas
+    const atual=qty*n(state.data.market.btcUsd);
+    const difAtual=atual-usd;
+    const pctAtual=usd>0?(atual/usd-1)*100:0;
+    const pctAtualTxt=(pctAtual>=0?'+':'−')+Math.abs(pctAtual).toFixed(1).replace('.',',')+'%';
+    const difAtualTxt=(difAtual>=0?'+':'−')+money(Math.abs(difAtual),'USD');
     const declared=n(state.data.irpfPm),shown=declared>0?declared:pm,diff=declared>0&&pm>0?declared-pm:0;
     $('banditSub').textContent=it.length
       ? it.length+(it.length===1?' compra':' compras')+' · '+fmtDate(it[0].date)+' → '+fmtDate(it[it.length-1].date)+' · não entra em nenhum outro cálculo'
@@ -1129,20 +1158,27 @@
         '<button type="button" class="ibtn del" onclick="removeFiscalItem(&quot;'+t.key+'&quot;)" title="Ocultar da visão fiscal">'+TRASH_ICON+'</button></div></td></tr>';
     }).join('');
     $('banditBody').innerHTML=
-      '<div class="bp-grid">'+
-        '<div class="bp-card"><div class="k">Quantidade marcada</div><div class="v">'+qty.toFixed(8)+' BTC</div><div class="s">'+Math.round(qty*1e8).toLocaleString('pt-BR')+' sats</div></div>'+
-        '<div class="bp-card"><div class="k">Total pago</div><div class="v">'+directMoney(brl,'BRL')+'</div><div class="s">'+money(usd,'USD')+'</div></div>'+
-        '<div class="bp-card"><div class="k">Dólar médio</div><div class="v">'+(fxMedio>0?'R$ '+fxMedio.toFixed(4).replace('.',','):'—')+'</div><div class="s">câmbio ponderado das compras</div></div>'+
+      '<div class="bp-strip">'+
+        '<div class="bp-cell bp-hero"><div class="bp-k">BTC declarado</div>'+
+          '<div class="bp-v">'+qty.toFixed(8)+'</div>'+
+          '<div class="bp-s">'+Math.round(qty*1e8).toLocaleString('pt-BR')+' sats</div></div>'+
+        '<div class="bp-cell"><div class="bp-k">Total pago</div>'+
+          '<div class="bp-v">'+money(usd,'USD')+'</div>'+
+          '<div class="bp-s">'+directMoney(brl,'BRL')+'</div></div>'+
+        '<div class="bp-cell"><div class="bp-k">Total atual</div>'+
+          '<div class="bp-v '+(difAtual>=0?'positive':'negative')+'">'+money(atual,'USD')+'</div>'+
+          '<div class="bp-s">'+directMoney(atual*fx,'BRL')+'</div></div>'+
+        '<div class="bp-cell" id="bpPm"><div class="bp-k">PM do BTC'+
+          '<button type="button" class="ibtn" onclick="editIrpfPm()" title="Editar preço médio" style="margin-left:auto">'+PEN_ICON+'</button></div>'+
+          '<div class="bp-v">'+money(shown,'USD')+'</div>'+
+          '<div class="bp-s">'+directMoney(shown*fx,'BRL')+'</div>'+
+          '<div class="bp-edit"><input id="bpPmInput" inputmode="decimal" placeholder="'+(pm?pm.toFixed(2):'0,00')+'">'+
+          '<button type="button" class="primary-btn" style="padding:7px 10px;font-size:10.5px" onclick="saveIrpfPm()">Salvar</button>'+
+          '<button type="button" class="soft-btn" style="padding:7px 10px;font-size:10.5px" onclick="cancelIrpfPm()">Cancelar</button></div></div>'+
       '</div>'+
-      '<div class="bp-pm" id="bpPm"><div class="lbl">Preço médio declarado (US$)'+
-        '<button type="button" class="ibtn" onclick="editIrpfPm()" title="Editar preço médio" style="margin-left:auto">'+PEN_ICON+'</button></div>'+
-        '<div class="big">'+money(shown,'USD')+'</div>'+
-        '<div class="calc"><span class="c-brl">≙ '+directMoney(shown*fx,'BRL')+' em reais</span>'+
-          '<span class="c-calc">calculado <b>'+money(pm,'USD')+'</b></span>'+
-          (declared>0?'<span class="c-diff '+(diff>=0?'up':'down')+'">'+(diff>=0?'+':'')+money(diff,'USD')+'</span>':'')+'</div>'+
-        '<div class="bp-edit"><input id="bpPmInput" inputmode="decimal" placeholder="'+(pm?pm.toFixed(2):'0,00')+'">'+
-        '<button type="button" class="primary-btn" style="padding:8px 12px;font-size:11px" onclick="saveIrpfPm()">Salvar</button>'+
-        '<button type="button" class="soft-btn" style="padding:8px 12px;font-size:11px" onclick="cancelIrpfPm()">Cancelar</button></div></div>'+
+      '<div class="bp-var"><span class="var-pill '+(difAtual>=0?'up':'down')+'">'+(difAtual>=0?'▲':'▼')+' '+pctAtualTxt+'</span>'+
+        '<span class="bp-var-txt">valorização no período · <b>'+difAtualTxt+'</b>'+
+        (declared>0?' · PM declarado '+(diff>=0?'+':'')+money(diff,'USD')+' vs calculado':'')+'</span></div>'+
       toolbar+'<div class="bp-list"><table class="bp-table"><thead><tr><th></th><th>Data</th><th class="op">Operação</th><th class="r">Valor</th><th class="r pr">Cotação</th><th class="r fx">Dólar</th><th class="r">Quantidade</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
       (((state.data.irpfHidden||[]).length)?('<div class="bp-restore">'+state.data.irpfHidden.length+' oculta'+(state.data.irpfHidden.length===1?'':'s')+' na visão fiscal · <button type="button" onclick="restoreIrpfHidden()">restaurar</button></div>'):'');
   }

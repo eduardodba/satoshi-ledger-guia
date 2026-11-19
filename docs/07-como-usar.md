@@ -44,8 +44,10 @@ O dashboard recalcula tudo sozinho ao salvar.
   *Valor da movimentação* na hora; o rótulo passa a mostrar `(R$)`.
 - A tabela de **Movimentações** tem uma coluna **Dólar** com a cotação USD→BRL do
   dia de cada operação. No celular ela aparece junto do preço: `$99.367,42 /BTC · R$ 5,42`.
-- No **modo bandido**, o resumo ganhou o cartão **Dólar médio** (câmbio ponderado
-  das compras marcadas) e cada linha mostra a cotação do dólar do dia.
+- No **modo bandido**, o resumo mostra quatro números: **BTC declarado**,
+  **total pago**, **total atual** (valor de mercado das mesmas moedas) e **PM do
+  BTC** — cada um em US$ e com o equivalente em R$. Abaixo, a valorização do
+  período. Cada linha da tabela mostra a cotação do dólar do dia.
 
 ## Origem: escolhendo certo
 
