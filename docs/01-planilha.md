@@ -37,7 +37,7 @@ dela. Existem 5 abas, mas você só mexe em **uma**.
 | F | `Qtd` | quantidade de BTC. Positiva = compra, negativa = venda |
 | G | `Investidor` | nome/apelido de quem aportou (ex.: `Principal`) |
 | H | `Origem` | `Novo`, `Caixa`, `Especial`, `Ajuste` ou `Ajuste BTC` |
-| I | `Dólar R$` | cotação do dólar (USD→BRL) **na data do aporte** — o app preenchesozinho |
+| I | `Dólar R$` | cotação do dólar (USD→BRL) **na data do aporte** — o app preenche sozinho |
 
 ### Coluna I — Dólar R$ (automática)
 
