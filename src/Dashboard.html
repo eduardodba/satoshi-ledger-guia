@@ -1152,33 +1152,33 @@
       return '<tr><td class="bi">'+BANDIT_ICON+'</td>'+
         '<td class="dt">'+fmtDate(t.date)+(t.fiscalOnly?'<span class="bp-tagmob">Fiscal</span>':(t.overridden?' <span class="bp-dot" title="Com ajuste fiscal"></span>':''))+'</td>'+
         '<td class="op">'+badge+'</td>'+
-        '<td class="r '+(buy?'positive':'negative')+'">'+(buy?'+':'-')+money(Math.abs(n(t.priceUsd)*n(t.quantity)),'USD')+'</td>'+
-        '<td class="r pr">'+money(n(t.priceUsd),'USD')+'</td>'+
-        '<td class="r fx">R$ '+(n(t.usdBrl)||(n(t.priceBrl)&&n(t.priceUsd)?n(t.priceBrl)/n(t.priceUsd):fx)).toFixed(2).replace('.',',')+'</td>'+
-        '<td class="r">'+Math.abs(n(t.quantity)).toFixed(8)+'</td>'+
+        '<td class="r private '+(buy?'positive':'negative')+'">'+(buy?'+':'-')+money(Math.abs(n(t.priceUsd)*n(t.quantity)),'USD')+'</td>'+
+        '<td class="r pr private">'+money(n(t.priceUsd),'USD')+'</td>'+
+        '<td class="r fx private">R$ '+(n(t.usdBrl)||(n(t.priceBrl)&&n(t.priceUsd)?n(t.priceBrl)/n(t.priceUsd):fx)).toFixed(2).replace('.',',')+'</td>'+
+        '<td class="r private">'+Math.abs(n(t.quantity)).toFixed(8)+'</td>'+
         '<td class="a"><div class="acts"><button type="button" class="ibtn" onclick="editIrpfItem(&quot;'+t.key+'&quot;)" title="Ajustar valores fiscais">'+PEN_ICON+'</button>'+
         '<button type="button" class="ibtn del" onclick="removeFiscalItem(&quot;'+t.key+'&quot;)" title="Ocultar da visão fiscal">'+TRASH_ICON+'</button></div></td></tr>';
     }).join('');
     $('banditBody').innerHTML=
       '<div class="bp-strip">'+
         '<div class="bp-cell bp-hero"><div class="bp-k">BTC declarado</div>'+
-          '<div class="bp-v">'+qty.toFixed(8)+'</div>'+
-          '<div class="bp-s">'+Math.round(qty*1e8).toLocaleString('pt-BR')+' sats</div></div>'+
+          '<div class="bp-v private">'+qty.toFixed(8)+'</div>'+
+          '<div class="bp-s private">'+Math.round(qty*1e8).toLocaleString('pt-BR')+' sats</div></div>'+
         '<div class="bp-cell"><div class="bp-k">Total pago</div>'+
-          '<div class="bp-v">'+money(usd,'USD')+'</div>'+
-          '<div class="bp-s">'+directMoney(brl,'BRL')+'</div></div>'+
+          '<div class="bp-v private">'+money(usd,'USD')+'</div>'+
+          '<div class="bp-s private">'+directMoney(brl,'BRL')+'</div></div>'+
         '<div class="bp-cell"><div class="bp-k">Total atual</div>'+
-          '<div class="bp-v '+(difAtual>=0?'positive':'negative')+'">'+money(atual,'USD')+'</div>'+
-          '<div class="bp-s">'+directMoney(atual*fx,'BRL')+'</div></div>'+
+          '<div class="bp-v private '+(difAtual>=0?'positive':'negative')+'">'+money(atual,'USD')+'</div>'+
+          '<div class="bp-s private">'+directMoney(atual*fx,'BRL')+'</div></div>'+
         '<div class="bp-cell" id="bpPm"><div class="bp-k">PM do BTC'+
           '<button type="button" class="ibtn" onclick="editIrpfPm()" title="Editar preço médio" style="margin-left:auto">'+PEN_ICON+'</button></div>'+
-          '<div class="bp-v">'+money(shown,'USD')+'</div>'+
-          '<div class="bp-s">'+directMoney(shown*fx,'BRL')+'</div>'+
+          '<div class="bp-v private">'+money(shown,'USD')+'</div>'+
+          '<div class="bp-s private">'+directMoney(shown*fx,'BRL')+'</div>'+
           '<div class="bp-edit"><input id="bpPmInput" inputmode="decimal" placeholder="'+(pm?pm.toFixed(2):'0,00')+'">'+
           '<button type="button" class="primary-btn" style="padding:7px 10px;font-size:10.5px" onclick="saveIrpfPm()">Salvar</button>'+
           '<button type="button" class="soft-btn" style="padding:7px 10px;font-size:10.5px" onclick="cancelIrpfPm()">Cancelar</button></div></div>'+
       '</div>'+
-      '<div class="bp-var"><span class="var-pill '+(difAtual>=0?'up':'down')+'">'+(difAtual>=0?'▲':'▼')+' '+pctAtualTxt+'</span>'+
+      '<div class="bp-var private"><span class="var-pill '+(difAtual>=0?'up':'down')+'">'+(difAtual>=0?'▲':'▼')+' '+pctAtualTxt+'</span>'+
         '<span class="bp-var-txt">valorização no período · <b>'+difAtualTxt+'</b>'+
         (declared>0?' · PM declarado '+(diff>=0?'+':'')+money(diff,'USD')+' vs calculado':'')+'</span></div>'+
       toolbar+'<div class="bp-list"><table class="bp-table"><thead><tr><th></th><th>Data</th><th class="op">Operação</th><th class="r">Valor</th><th class="r pr">Cotação</th><th class="r fx">Dólar</th><th class="r">Quantidade</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
