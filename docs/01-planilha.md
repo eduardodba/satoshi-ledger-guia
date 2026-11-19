@@ -52,6 +52,25 @@ venda, PTAX do Banco Central). Você não precisa digitar nada:
 Serve para saber quanto o aporte custou em reais **na época** (e conferir a
 declaração), sem depender do dólar de hoje.
 
+### Padrão visual (todas as abas)
+
+Todas as abas de dados seguem o mesmo padrão, aplicado pelo `setupProject` e
+mantido a cada cadastro:
+
+| Item | Padrão |
+|---|---|
+| Fonte | **Arial 9** (cabeçalho e corpo) |
+| Cabeçalho | fundo `#111827`, texto branco, negrito, linha congelada, altura 32 |
+| Zebra | linhas alternadas entre branco e `#F8FAFC` |
+| Bordas | `#E2E8F0`, finas, nas quatro laterais |
+| Alinhamento | texto à esquerda, números e datas à direita |
+| Larguras | fixas por aba (nada de coluna esticada) |
+
+Ao **cadastrar ou editar** uma movimentação, a linha nova recebe exatamente esse
+formato — a planilha não sai do padrão com o tempo.
+
+> As abas de backup (`*_old`) ficam como estão: são cópias históricas.
+
 ### Regra de ouro
 
 ```

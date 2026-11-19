@@ -10,7 +10,7 @@
  */
 
 var APP = Object.freeze({
-  VERSION: '2.23.0',
+  VERSION: '2.24.0',
   SHEETS: {
     IRPF: 'IRPF',
     CONTRIBUTIONS: 'Aportes',
@@ -227,53 +227,163 @@ function ensureOriginColumn_(ss) {
   if (changed) range.setValues(values);
 }
 
+// -----------------------------------------------------------------------------
+// PADRÃO VISUAL DAS ABAS
+// -----------------------------------------------------------------------------
+//
+// Uma única definição para todas as abas: mesma fonte, mesmo tamanho, mesmo
+// cabeçalho, mesmo espaçamento e zebra. Tanto o setup quanto o cadastro de um
+// aporte novo passam por aqui — assim a planilha não sai do padrão com o tempo.
+
+var SHEET_STD = Object.freeze({
+  font: 'Arial',
+  bodySize: 9,
+  headerSize: 9,
+  headerBg: '#111827',
+  headerColor: '#FFFFFF',
+  bandA: '#FFFFFF',
+  bandB: '#F8FAFC',
+  border: '#E2E8F0',
+  headerHeight: 32
+});
+
+/** Aplica o padrão visual a uma aba inteira. */
+function applySheetStandard_(sheet, opts) {
+  if (!sheet) return;
+  opts = opts || {};
+  var cols = Math.max(1, opts.columns || sheet.getLastColumn() || 1);
+  var lastRow = Math.max(1, sheet.getLastRow());
+
+  sheet.setFrozenRows(1);
+
+  var head = sheet.getRange(1, 1, 1, cols);
+  head.setBackground(SHEET_STD.headerBg)
+    .setFontColor(SHEET_STD.headerColor)
+    .setFontWeight('bold')
+    .setFontFamily(SHEET_STD.font)
+    .setFontSize(SHEET_STD.headerSize)
+    .setVerticalAlignment('middle')
+    .setHorizontalAlignment('left')
+    .setWrap(false);
+  sheet.setRowHeight(1, SHEET_STD.headerHeight);
+
+  if (lastRow > 1) {
+    var body = sheet.getRange(2, 1, lastRow - 1, cols);
+    body.setFontFamily(SHEET_STD.font)
+      .setFontSize(SHEET_STD.bodySize)
+      .setVerticalAlignment('middle')
+      .setHorizontalAlignment('left')
+      .setBorder(true, true, true, true, true, true, SHEET_STD.border, SpreadsheetApp.BorderStyle.SOLID);
+
+    var zebra = [];
+    for (var r = 2; r <= lastRow; r++) {
+      var linha = [];
+      for (var c = 1; c <= cols; c++) linha.push(r % 2 === 0 ? SHEET_STD.bandA : SHEET_STD.bandB);
+      zebra.push(linha);
+    }
+    body.setBackgrounds(zebra);
+  }
+
+  (opts.formats || []).forEach(function (f) {
+    if (f.col > cols || lastRow < 2) return;
+    sheet.getRange(2, f.col, lastRow - 1, 1).setNumberFormat(f.fmt);
+  });
+  (opts.widths || []).forEach(function (w, i) { sheet.setColumnWidth(i + 1, w); });
+}
+
+/** Formata uma única linha de aporte (usada ao salvar/editar). */
+function formatContributionRow_(sheet, row) {
+  if (!sheet || !row || row < 2) return;
+  var rng = sheet.getRange(row, 1, 1, FX_COLUMN);
+  rng.setFontFamily(SHEET_STD.font)
+    .setFontSize(SHEET_STD.bodySize)
+    .setVerticalAlignment('middle')
+    .setHorizontalAlignment('left')
+    .setBorder(true, true, true, true, true, true, SHEET_STD.border, SpreadsheetApp.BorderStyle.SOLID)
+    .setBackground(row % 2 === 0 ? SHEET_STD.bandA : SHEET_STD.bandB);
+  sheet.getRange(row, 1).setNumberFormat('dd/MM/yyyy');
+  sheet.getRange(row, 3).setNumberFormat('$#,##0.00;-$#,##0.00');
+  sheet.getRange(row, 4).setNumberFormat('$#,##0.00');
+  sheet.getRange(row, 5).setNumberFormat('"R$" #,##0.00');
+  sheet.getRange(row, 6).setNumberFormat('0.00000000');
+  sheet.getRange(row, FX_COLUMN).setNumberFormat('"R$" #,##0.0000');
+}
+
 function formatSheets_(ss) {
-  var names = [APP.SHEETS.CONTRIBUTIONS, APP.SHEETS.DAILY, APP.SHEETS.MONTHLY, APP.SHEETS.CURRENCIES];
-  names.forEach(function (name) {
-    var sheet = ss.getSheetByName(name);
-    if (!sheet) return;
-    var lastColumn = Math.max(1, sheet.getLastColumn());
-    sheet.setFrozenRows(1);
-    sheet.getRange(1, 1, 1, lastColumn)
-      .setBackground('#111827')
-      .setFontColor('#FFFFFF')
-      .setFontWeight('bold')
-      .setFontFamily('Arial')
-      .setFontSize(9)
-      .setVerticalAlignment('middle');
-    sheet.getRange(1, 1, Math.max(1, sheet.getLastRow()), lastColumn).setFontFamily('Arial').setFontSize(9);
+  var aportes = ss.getSheetByName(APP.SHEETS.CONTRIBUTIONS);
+  applySheetStandard_(aportes, {
+    columns: FX_COLUMN,
+    formats: [
+      { col: 1, fmt: 'dd/MM/yyyy' },
+      { col: 3, fmt: '$#,##0.00;-$#,##0.00' },
+      { col: 4, fmt: '$#,##0.00' },
+      { col: 5, fmt: '"R$" #,##0.00' },
+      { col: 6, fmt: '0.00000000' },
+      { col: FX_COLUMN, fmt: '"R$" #,##0.0000' }
+    ],
+    widths: [96, 62, 118, 112, 122, 122, 112, 96, 104]
   });
 
-  var contributions = ss.getSheetByName(APP.SHEETS.CONTRIBUTIONS);
-  if (contributions && contributions.getMaxRows() > 1) {
-    contributions.getRange(2, 1, contributions.getMaxRows() - 1, 1).setNumberFormat('dd/MM/yyyy');
-    contributions.getRange(2, 3, contributions.getMaxRows() - 1, 2).setNumberFormat('$#,##0.00;-$#,##0.00');
-    contributions.getRange(2, 5, contributions.getMaxRows() - 1, 1).setNumberFormat('"R$" #,##0.00');
-    contributions.getRange(2, 6, contributions.getMaxRows() - 1, 1).setNumberFormat('0.00000000');
-    contributions.autoResizeColumns(1, 7);
-  }
-
   var daily = ss.getSheetByName(APP.SHEETS.DAILY);
-  if (daily && daily.getMaxRows() > 1) {
-    daily.getRange(2, 1, daily.getMaxRows() - 1, 1).setNumberFormat('dd/MM/yyyy');
-    daily.getRange(2, 2, daily.getMaxRows() - 1, 2).setNumberFormat('$#,##0.00');
-    daily.getRange(2, 4, daily.getMaxRows() - 1, 1).setNumberFormat('0.00000000');
-    daily.getRange(2, 5, daily.getMaxRows() - 1, 2).setNumberFormat('$#,##0.00');
-    daily.autoResizeColumns(1, 6);
-  }
+  applySheetStandard_(daily, {
+    columns: 6,
+    formats: [
+      { col: 1, fmt: 'dd/MM/yyyy' },
+      { col: 2, fmt: '$#,##0.00' },
+      { col: 3, fmt: '"R$" #,##0.00' },
+      { col: 4, fmt: '0.00000000' },
+      { col: 5, fmt: '$#,##0.00' },
+      { col: 6, fmt: '$#,##0.00' }
+    ],
+    widths: [96, 122, 128, 122, 112, 112]
+  });
 
   var monthly = ss.getSheetByName(APP.SHEETS.MONTHLY);
-  if (monthly && monthly.getMaxRows() > 1) {
-    var monthlyRows = monthly.getMaxRows() - 1;
-    monthly.getRange(2, 1, monthlyRows, 1).setNumberFormat('M/yy');
-    monthly.getRange(2, 2, monthlyRows, 2).setNumberFormat('$#,##0.00;-$#,##0.00');
-    monthly.getRange(2, 4, monthlyRows, 2).setNumberFormat('"R$" #,##0.00;-"R$" #,##0.00');
-    monthly.getRange(2, 6, monthlyRows, 1).setNumberFormat('$#,##0.00;-$#,##0.00');
-    monthly.autoResizeColumns(1, 6);
-  }
+  applySheetStandard_(monthly, {
+    columns: 6,
+    formats: [
+      { col: 1, fmt: 'M/yy' },
+      { col: 2, fmt: '$#,##0.00;-$#,##0.00' },
+      { col: 3, fmt: '$#,##0.00;-$#,##0.00' },
+      { col: 4, fmt: '"R$" #,##0.00;-"R$" #,##0.00' },
+      { col: 5, fmt: '"R$" #,##0.00;-"R$" #,##0.00' },
+      { col: 6, fmt: '$#,##0.00;-$#,##0.00' }
+    ],
+    widths: [78, 128, 128, 136, 136, 128]
+  });
+
+  var currencies = ss.getSheetByName(APP.SHEETS.CURRENCIES);
+  applySheetStandard_(currencies, { columns: Math.max(3, currencies ? currencies.getLastColumn() : 3) });
+
+  // Aba pessoal de renda fixa (fora do app): mesma linguagem visual, colunas
+  // preservadas. Datas em texto não são convertidas para não mexer nos dados.
+  var rendaFixa = ss.getSheetByName('Renda Fixa');
+  applySheetStandard_(rendaFixa, {
+    columns: Math.max(6, rendaFixa ? rendaFixa.getLastColumn() : 6),
+    formats: [
+      { col: 3, fmt: '"R$" #,##0.00' },
+      { col: 4, fmt: '"R$" #,##0.00' },
+      { col: 5, fmt: '0.00000000' }
+    ],
+    widths: [96, 130, 130, 130, 110, 118]
+  });
+
+  var irpf = ss.getSheetByName('IRPF');
+  applySheetStandard_(irpf, {
+    columns: 8,
+    formats: [
+      { col: 1, fmt: 'dd/MM/yyyy' },
+      { col: 3, fmt: '$#,##0.00;-$#,##0.00' },
+      { col: 4, fmt: '$#,##0.00' },
+      { col: 5, fmt: '"R$" #,##0.00' },
+      { col: 6, fmt: '0.00000000' }
+    ],
+    widths: [96, 62, 118, 112, 122, 122, 112, 96]
+  });
 }
 
 // -----------------------------------------------------------------------------
+// CONFIGURAÇÕES SEGURAS// -----------------------------------------------------------------------------
 // CONFIGURAÇÕES SEGURAS
 // -----------------------------------------------------------------------------
 
@@ -1879,11 +1989,7 @@ function saveContribution_(payload, rowNumber) {
     sheet.getRange(targetRow, 1, 1, FX_COLUMN).setValues([[
       date, 'BTC', amountUsd, priceUsd, priceBrl, quantity, investor, origin, dolarDia
     ]]);
-    sheet.getRange(targetRow, 1).setNumberFormat('dd/MM/yyyy');
-    sheet.getRange(targetRow, 3, 1, 2).setNumberFormat('$#,##0.00;-$#,##0.00');
-    sheet.getRange(targetRow, 5).setNumberFormat('"R$" #,##0.00');
-    sheet.getRange(targetRow, 6).setNumberFormat('0.00000000');
-    sheet.getRange(targetRow, FX_COLUMN).setNumberFormat('"R$" #,##0.0000');
+    formatContributionRow_(sheet, targetRow);
 
     if (useSpecial) {
       var after = calculateCash_(readContributions_(ss), market);
@@ -2157,7 +2263,7 @@ function adjustCoin(payload) {
     var note = sanitizeText_(payload.note || 'Ajuste de moedas', 50);
     var targetRow = sheet.getLastRow() + 1;
 
-    sheet.getRange(targetRow, 1, 1, 8).setValues([[
+    sheet.getRange(targetRow, 1, 1, FX_COLUMN).setValues([[
       fromIsoDate_(toIsoDate_(new Date())),
       'BTC',
       0,
@@ -2165,12 +2271,10 @@ function adjustCoin(payload) {
       priceBrl,
       deltaBtc,
       note,
-      CONTRIBUTION_ORIGIN.COIN_ADJUSTMENT
+      CONTRIBUTION_ORIGIN.COIN_ADJUSTMENT,
+      fx
     ]]);
-    sheet.getRange(targetRow, 1).setNumberFormat('dd/MM/yyyy');
-    sheet.getRange(targetRow, 3, 1, 2).setNumberFormat('$#,##0.00;-$#,##0.00');
-    sheet.getRange(targetRow, 5).setNumberFormat('"R$" #,##0.00');
-    sheet.getRange(targetRow, 6).setNumberFormat('0.00000000');
+    formatContributionRow_(sheet, targetRow);
 
     rebuildHistoriesUnlocked_(ss);
     var novo = calculatePosition_(readContributions_(ss), market.btcUsd);
@@ -2489,7 +2593,7 @@ function adjustCash(payload) {
 
     // Linha de ajuste: qty = 0 e Origem = 'Ajuste'. Não afeta posição/PM/histórico;
     // a coluna C (Aporte $) carrega o delta apenas para o cálculo do caixa.
-    sheet.getRange(targetRow, 1, 1, 8).setValues([[
+    sheet.getRange(targetRow, 1, 1, FX_COLUMN).setValues([[
       fromIsoDate_(toIsoDate_(new Date())),
       'BTC',
       deltaUsd,
@@ -2497,12 +2601,10 @@ function adjustCash(payload) {
       priceBrl,
       0,
       note,
-      CONTRIBUTION_ORIGIN.ADJUSTMENT
+      CONTRIBUTION_ORIGIN.ADJUSTMENT,
+      fx
     ]]);
-    sheet.getRange(targetRow, 1).setNumberFormat('dd/MM/yyyy');
-    sheet.getRange(targetRow, 3, 1, 2).setNumberFormat('$#,##0.00;-$#,##0.00');
-    sheet.getRange(targetRow, 5).setNumberFormat('"R$" #,##0.00');
-    sheet.getRange(targetRow, 6).setNumberFormat('0.00000000');
+    formatContributionRow_(sheet, targetRow);
 
     // Ajuste não muda posição, mas mantém os históricos consistentes na mesma via.
     rebuildHistoriesUnlocked_(ss);
