@@ -98,3 +98,15 @@ do número. Mantenha o cache para não estourar limites.
 Você **não precisa criar nada** para as APIs de preço e on-chain: elas já
 funcionam sem cadastro. A única coisa que você cria é o **bot do Telegram**, e
 somente se quiser receber alertas.
+
+## Cotação do dólar (USD → BRL)
+
+| Ordem | Fonte | Endpoint | Observação |
+|---|---|---|---|
+| 1 | **Banco Central (PTAX)** | `olinda.bcb.gov.br/.../CotacaoDolarPeriodo` | oficial, um pedido traz o período inteiro |
+| 2 | **Frankfurter** (BCE) | `api.frankfurter.app/AAAA-MM-DD..AAAA-MM-DD?from=USD&to=BRL` | reserva |
+| 3 | cotação do momento | Coinbase `exchange-rates` | se as duas falharem |
+
+Só dias úteis têm cotação; fins de semana e feriados herdam a do dia útil
+anterior. A AwesomeAPI foi testada e devolve `429` (cota excedida) a partir dos
+servidores do Google, por isso não é usada.

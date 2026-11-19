@@ -10,7 +10,7 @@
  */
 
 var APP = Object.freeze({
-  VERSION: '2.22.1',
+  VERSION: '2.23.0',
   SHEETS: {
     IRPF: 'IRPF',
     CONTRIBUTIONS: 'Aportes',
@@ -61,6 +61,12 @@ var APP = Object.freeze({
 // CAIXA ESPECIAL: 20% do caixa total, reservado para uma oportunidade escolhida
 // por você. Rebalanceado automaticamente no dia 725 (início do ciclo) para ficar
 // exatamente em 20% — completa pra cima ou devolve o excedente ao caixa normal.
+// Coluna I da aba "Aportes": cotação do dólar (USD→BRL) na data do aporte.
+// A coluna H (Origem) já era usada; a I estava livre desde que a flag do IRPF
+// passou a viver nas Propriedades do script.
+var FX_COLUMN = 9;
+var FX_HEADER = 'Dólar R$';
+
 var DCA_PLAN = Object.freeze({
   START_DAYS_BEFORE_HALVING: 725,
   END_DAYS_BEFORE_HALVING: 500,
@@ -120,6 +126,7 @@ function onOpen() {
     .addItem('Configurar / atualizar projeto', 'setupProject')
     .addItem('Registrar snapshot agora', 'recordDailySnapshot')
     .addItem('Carregar histórico de preços (1º uso)', 'preencherHistoricoDiario')
+    .addItem('Preencher cotação do dólar (Aportes)', 'preencherDolarAportes')
     .addItem('Reconstruir históricos', 'rebuildHistories')
     .addItem('Backup + reconstruir históricos', 'backupAndRebuildHistories')
     .addSeparator()
@@ -135,6 +142,7 @@ function setupProject() {
   ensureSheet_(ss, APP.SHEETS.MONTHLY, APP.HEADERS.MONTHLY);
   ensureSheet_(ss, APP.SHEETS.CURRENCIES, APP.HEADERS.CURRENCIES);
   ensureOriginColumn_(ss);
+  ensureDolarColumn_(ss);
   formatSheets_(ss);
   installTriggers_();
   rebuildHistories();
@@ -445,7 +453,7 @@ function getDashboardData() {
 function readContributions_(ss) {
   var sheet = ss.getSheetByName(APP.SHEETS.CONTRIBUTIONS);
   if (!sheet || sheet.getLastRow() < 2) return [];
-  var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, 8).getValues();
+  var values = sheet.getRange(2, 1, sheet.getLastRow() - 1, FX_COLUMN).getValues();
   var marcadas = lerIrpfFlag_();
   var rows = [];
   values.forEach(function (row, index) {
@@ -461,6 +469,7 @@ function readContributions_(ss) {
       quantity: cleanNumber_(row[5]),
       investor: String(row[6] || 'Principal').trim(),
       origin: origin,
+      usdBrl: cleanNumber_(row[8]),
       isAdjustment: origin === CONTRIBUTION_ORIGIN.ADJUSTMENT,
       isCoinAdjustment: origin === CONTRIBUTION_ORIGIN.COIN_ADJUSTMENT,
       irpf: marcadas.indexOf(index + 2) >= 0
@@ -1255,6 +1264,160 @@ function backupAndRebuildHistories() {
 
 /** Recalcula saldo, quantidade e PM em cada data, preservando preço BTC e câmbio histórico implícito. */
 // -----------------------------------------------------------------------------
+// COTAÇÃO DO DÓLAR (USD→BRL) POR DATA
+// -----------------------------------------------------------------------------
+//
+// A coluna I da aba "Aportes" guarda o câmbio do dia de cada aporte. Fontes
+// públicas gratuitas, sem chave: PTAX do Banco Central (oficial) e Frankfurter
+// (Banco Central Europeu) como reserva. Fins de semana e feriados usam a cotação
+// do último dia útil anterior.
+
+/** Série diária USD→BRL: { 'yyyy-mm-dd': taxa } — só dias úteis. */
+function buscarCotacoesDolar_(inicioIso, fimIso) {
+  var out = {};
+  var ini = String(inicioIso).slice(0, 10), fim = String(fimIso).slice(0, 10);
+  var p = ini.split('-'), f = fim.split('-');
+  var br = function (a) { return a[1] + '-' + a[2] + '-' + a[0]; };  // MM-DD-YYYY
+
+  // 1) PTAX (Banco Central)
+  try {
+    var url = 'https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarPeriodo'
+      + '(dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)'
+      + '?@dataInicial=%27' + br(p) + '%27&@dataFinalCotacao=%27' + br(f) + '%27'
+      + '&$format=json&$top=10000';
+    var resp = fetchJson_(url);
+    (resp && resp.value ? resp.value : []).forEach(function (r) {
+      var v = Number(r.cotacaoVenda) || Number(r.cotacaoCompra) || 0;
+      var d = String(r.dataHoraCotacao || '').slice(0, 10);
+      if (v > 0 && d) out[d] = v;
+    });
+  } catch (e) {
+    console.warn('PTAX indisponível: ' + e.message);
+  }
+  if (Object.keys(out).length) return out;
+
+  // 2) Frankfurter (BCE)
+  try {
+    var r2 = fetchJson_('https://api.frankfurter.app/' + ini + '..' + fim + '?from=USD&to=BRL');
+    var taxas = (r2 && r2.rates) ? r2.rates : {};
+    Object.keys(taxas).forEach(function (d) {
+      var v = Number(taxas[d].BRL) || 0;
+      if (v > 0) out[d] = v;
+    });
+  } catch (e2) {
+    console.warn('Frankfurter indisponível: ' + e2.message);
+  }
+  return out;
+}
+
+/** Preenche as datas sem cotação com a do último dia útil anterior (e a primeira para trás). */
+function completarSerieDolar_(serie, inicioIso, fimIso) {
+  var datas = Object.keys(serie).sort();
+  if (!datas.length) return serie;
+  var out = {}, ultimo = serie[datas[0]];
+  var d = fromIsoDate_(inicioIso);
+  var fim = fromIsoDate_(fimIso);
+  while (d <= fim) {
+    var iso = toIsoDate_(d);
+    if (serie[iso]) ultimo = serie[iso];
+    out[iso] = ultimo;
+    d = new Date(d.getTime() + 86400000);
+  }
+  return out;
+}
+
+/** Cotação do dólar numa data específica (com cache de 6 h). */
+function cotacaoDolarDoDia_(iso) {
+  iso = String(iso).slice(0, 10);
+  var cache = CacheService.getScriptCache();
+  var chave = 'fx_' + iso;
+  var salvo = cache.get(chave);
+  if (salvo) return Number(salvo) || 0;
+
+  var inicio = toIsoDate_(new Date(fromIsoDate_(iso).getTime() - 7 * 86400000));
+  var serie = completarSerieDolar_(buscarCotacoesDolar_(inicio, iso), inicio, iso);
+  var valor = Number(serie[iso]) || 0;
+  if (!(valor > 0)) {
+    try { valor = cleanNumber_(getExchangeRate_()) || 0; } catch (e) { valor = 0; }
+  }
+  if (valor > 0) cache.put(chave, String(valor), 21600);
+  return valor;
+}
+
+/** Garante a coluna "Dólar R$" na aba Aportes. */
+function ensureDolarColumn_(ss) {
+  ss = ss || SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(APP.SHEETS.CONTRIBUTIONS);
+  if (!sheet) return;
+  if (String(sheet.getRange(1, FX_COLUMN).getValue() || '').trim() !== FX_HEADER) {
+    sheet.getRange(1, FX_COLUMN).setValue(FX_HEADER).setFontWeight('bold');
+  }
+}
+
+/**
+ * Preenche a coluna "Dólar R$" dos aportes que estiverem vazios.
+ * Use pelo menu: ₿ Satoshi Ledger → Preencher cotação do dólar.
+ */
+function preencherDolarAportes() {
+  var res = preencherDolarAportes_(false);
+  try { SpreadsheetApp.getActiveSpreadsheet().toast(res.message, 'Satoshi Ledger', 8); } catch (e) {}
+  return res;
+}
+
+/** Versão de teste: simula sem gravar. */
+function testarPreenchimentoDolar() {
+  var r = preencherDolarAportes_(true);
+  Logger.log(JSON.stringify({ preenchidos: r.preenchidos, primeira: r.primeira, ultima: r.ultima, exemplo: r.exemplo, message: r.message }, null, 2));
+  return r;
+}
+
+function preencherDolarAportes_(dryRun) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(APP.SHEETS.CONTRIBUTIONS);
+  if (!sheet || sheet.getLastRow() < 2) return { success: false, preenchidos: 0, message: 'Nenhum aporte cadastrado.' };
+  ensureDolarColumn_(ss);
+
+  var n = sheet.getLastRow() - 1;
+  var rows = sheet.getRange(2, 1, n, FX_COLUMN).getValues();
+  var vazios = [], primeira = null, ultima = null;
+  rows.forEach(function (r, i) {
+    if (!r[0]) return;
+    if (!cleanNumber_(r[8])) vazios.push(i + 2);
+    var d = toIsoDate_(r[0]);
+    if (d && (!primeira || d < primeira)) primeira = d;
+    if (d && (!ultima || d > ultima)) ultima = d;
+  });
+  if (!vazios.length) return { success: true, preenchidos: 0, message: 'Todos os aportes já têm a cotação do dólar.' };
+
+  var serie = completarSerieDolar_(buscarCotacoesDolar_(primeira, ultima), primeira, ultima);
+  var valores = vazios.map(function (linha) {
+    var iso = toIsoDate_(rows[linha - 2][0]);
+    var v = Number(serie[iso]) || 0;
+    if (!(v > 0)) { try { v = cleanNumber_(getExchangeRate_()) || 0; } catch (e) { v = 0; } }
+    return [v];
+  });
+
+  if (!dryRun) {
+    // grava a coluna inteira de uma vez (1 chamada, em vez de N)
+    var coluna = rows.map(function (r) { return [cleanNumber_(r[8]) || 0]; });
+    vazios.forEach(function (linha, i) { coluna[linha - 2][0] = valores[i][0]; });
+    var rng = sheet.getRange(2, FX_COLUMN, coluna.length, 1);
+    rng.setValues(coluna);
+    rng.setNumberFormat('"R$" #,##0.0000');
+    SpreadsheetApp.flush();
+  }
+  var exemplo = vazios.length ? [toIsoDate_(rows[vazios[0] - 2][0]), valores[0][0]] : null;
+  return {
+    success: true,
+    preenchidos: vazios.length,
+    primeira: primeira,
+    ultima: ultima,
+    exemplo: exemplo,
+    message: (dryRun ? '[TESTE] ' : '') + vazios.length + ' aporte(s) com a cotação do dólar preenchida.'
+  };
+}
+
+// -----------------------------------------------------------------------------
 // HISTÓRICO INICIAL DE PREÇOS
 // -----------------------------------------------------------------------------
 //
@@ -1709,13 +1872,18 @@ function saveContribution_(payload, rowNumber) {
       }
     }
 
-    sheet.getRange(targetRow, 1, 1, 8).setValues([[
-      date, 'BTC', amountUsd, priceUsd, priceBrl, quantity, investor, origin
+    // Cotação do dólar do dia do aporte (coluna I) — preenchida sozinha.
+    var dolarDia = cotacaoDolarDoDia_(payload.date);
+    if (!(dolarDia > 0)) dolarDia = market.usdBrl;
+
+    sheet.getRange(targetRow, 1, 1, FX_COLUMN).setValues([[
+      date, 'BTC', amountUsd, priceUsd, priceBrl, quantity, investor, origin, dolarDia
     ]]);
     sheet.getRange(targetRow, 1).setNumberFormat('dd/MM/yyyy');
     sheet.getRange(targetRow, 3, 1, 2).setNumberFormat('$#,##0.00;-$#,##0.00');
     sheet.getRange(targetRow, 5).setNumberFormat('"R$" #,##0.00');
     sheet.getRange(targetRow, 6).setNumberFormat('0.00000000');
+    sheet.getRange(targetRow, FX_COLUMN).setNumberFormat('"R$" #,##0.0000');
 
     if (useSpecial) {
       var after = calculateCash_(readContributions_(ss), market);
@@ -2063,12 +2231,6 @@ function rebuildIrpfSheet_(ss) {
   var marcadas = lerIrpfFlag_();
   var overrides = lerIrpfOverrides_();
   var ocultas = lerIrpfHidden_().map(Number);
-
-  // Limpa a antiga coluna I da aba Aportes (a flag não mora mais lá).
-  var aportes = ss.getSheetByName(APP.SHEETS.CONTRIBUTIONS);
-  if (aportes && String(aportes.getRange(1, 9).getValue() || '') !== '') {
-    aportes.getRange(1, 9, Math.max(2, aportes.getLastRow()), 1).clearContent();
-  }
 
   var linhas = [];
   readContributions_(ss).forEach(function (t) {

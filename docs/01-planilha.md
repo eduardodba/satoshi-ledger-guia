@@ -37,6 +37,20 @@ dela. Existem 5 abas, mas você só mexe em **uma**.
 | F | `Qtd` | quantidade de BTC. Positiva = compra, negativa = venda |
 | G | `Investidor` | nome/apelido de quem aportou (ex.: `Principal`) |
 | H | `Origem` | `Novo`, `Caixa`, `Especial`, `Ajuste` ou `Ajuste BTC` |
+| I | `Dólar R$` | cotação do dólar (USD→BRL) **na data do aporte** — o app preenchesozinho |
+
+### Coluna I — Dólar R$ (automática)
+
+A coluna I guarda **quanto estava o dólar no dia de cada aporte** (cotação de
+venda, PTAX do Banco Central). Você não precisa digitar nada:
+
+- **aportes novos** — o app busca a cotação da data e grava na linha;
+- **aportes antigos** — menu **₿ Satoshi Ledger → Preencher cotação do dólar
+  (Aportes)** preenche só as células vazias;
+- fins de semana e feriados usam a cotação do último dia útil anterior.
+
+Serve para saber quanto o aporte custou em reais **na época** (e conferir a
+declaração), sem depender do dólar de hoje.
 
 ### Regra de ouro
 
@@ -51,8 +65,8 @@ planilha na mão — uma linha com valores que não “fecham” distorce o pre�
 
 **Compra de $500 a $95.000:**
 ```
-Aporte     Token  Aporte $  Cotação $  Cotação R$  Qtd          Investidor  Origem
-15/01/2025 BTC    500       95000      515000     0,00526316   Principal   Novo
+Aporte     Token  Aporte $  Cotação $  Cotação R$  Qtd          Investidor  Origem  Dólar R$
+15/01/2025 BTC    500       95000      515000     0,00526316   Principal   Novo    5,3791
 ```
 
 **Venda de $1.000 a $110.000:**
