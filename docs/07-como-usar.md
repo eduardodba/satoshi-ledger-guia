@@ -38,6 +38,15 @@ O dashboard recalcula tudo sozinho ao salvar.
 | **Investidor** | quem fez o aporte (útil se mais de uma pessoa usa a mesma carteira) |
 | **Origem** | de onde saiu o dinheiro (veja abaixo) |
 
+## Moeda, cotação e a coluna Dólar
+
+- No formulário, trocar entre **USD** e **BRL** converte a *Cotação do BTC* e o
+  *Valor da movimentação* na hora; o rótulo passa a mostrar `(R$)`.
+- A tabela de **Movimentações** tem uma coluna **Dólar** com a cotação USD→BRL do
+  dia de cada operação. No celular ela aparece junto do preço: `$99.367,42 /BTC · R$ 5,42`.
+- No **modo bandido**, o resumo ganhou o cartão **Dólar médio** (câmbio ponderado
+  das compras marcadas) e cada linha mostra a cotação do dólar do dia.
+
 ## Origem: escolhendo certo
 
 | Situação | Origem |
