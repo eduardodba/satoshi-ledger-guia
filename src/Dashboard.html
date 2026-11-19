@@ -410,14 +410,16 @@
     .bp-card .v{font-size:17px;font-weight:760;margin-top:5px;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
     .bp-card .s{font-size:9px;color:var(--soft);margin-top:2px}
     .bp-strip{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;border:1px solid var(--border);border-radius:13px;overflow:hidden}
-    .bp-cell{padding:13px 15px;border-right:1px solid var(--border);min-width:0}
+    .bp-cell{position:relative;padding:13px 15px;border-right:1px solid var(--border);min-width:0}
     .bp-cell:last-child{border-right:0}
     .bp-cell.bp-hero{background:linear-gradient(180deg,rgba(247,147,26,.09),rgba(247,147,26,.02))}
-    .bp-k{display:flex;align-items:center;font-size:7.5px;font-weight:800;letter-spacing:.75px;text-transform:uppercase;color:var(--muted);white-space:nowrap}
-    .bp-v{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-.5px;margin-top:5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+    /* alturas fixas: rótulo, valor e linha de apoio começam no mesmo Y nas 4 colunas */
+    .bp-k{display:flex;align-items:center;height:13px;font-size:7.5px;font-weight:800;letter-spacing:.75px;text-transform:uppercase;color:var(--muted);white-space:nowrap;padding-right:22px}
+    .bp-v{display:flex;align-items:center;height:29px;font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
     .bp-hero .bp-v{font-size:23px;letter-spacing:-.8px}
     .bp-v.positive{color:var(--green)}.bp-v.negative{color:var(--red)}
-    .bp-s{font-size:8.5px;color:var(--soft);margin-top:3px;white-space:nowrap}
+    .bp-s{display:flex;align-items:center;height:12px;font-size:8.5px;color:var(--soft);white-space:nowrap}
+    .bp-cell .ibtn{position:absolute;top:9px;right:9px}
     .bp-cell .bp-edit{display:none}
     .bp-cell.editing .bp-v,.bp-cell.editing .bp-s{display:none}
     .bp-cell.editing .bp-edit{display:flex;margin-top:8px;gap:6px;align-items:center}
