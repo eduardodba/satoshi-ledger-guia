@@ -559,7 +559,7 @@
             <div class="eyebrow"><span class="live-dot"></span>Patrimônio total</div>
             <div class="hero-headline">
               <div class="hero-value-wrap"><span class="hero-accent"></span><div class="hero-value private" id="heroValue">—</div></div>
-              <div class="hero-seal" id="heroSeal"><span class="hero-seal-arrow" id="heroSealArrow">▲</span><span class="hero-seal-pct private" id="heroPnlPct">—</span><span class="hero-seal-label">Resultado total</span></div>
+              <div class="hero-seal" id="heroSeal"><span class="hero-seal-arrow" id="heroSealArrow">▲</span><span class="hero-seal-pct private" id="heroPnlPct">—</span><span class="hero-seal-label">Sobre o investido</span></div>
             </div>
             <div class="hero-btc"><span class="private" id="heroBtc">— BTC</span><button type="button" class="btc-edit" onclick="openCoinModal()" title="Ajustar quantidade de BTC" aria-label="Ajustar quantidade de BTC">✎</button> · <span id="heroInvestor">Todos os investidores</span></div>
             <div class="hero-metrics" id="heroMetrics"></div>
@@ -1321,7 +1321,7 @@
 
   function render(){state.view=buildView();renderHero();renderKpis();renderOnchain();renderCharts();renderInsights();renderDca();renderMonthly();renderTrades();updateBanditCount();if(document.getElementById('banditModal').classList.contains('open'))renderBandit();$('appVersion').textContent=state.data.version||'2';if($('brandVersion'))$('brandVersion').textContent='v'+(state.data.version||'—');document.body.classList.toggle('privacy',state.privacy)}
   function renderHero(){
-    const p=state.view.position,goal=nextGoal(p.qty),goalPct=Math.min(100,goal>0?p.qty/goal*100:0),remaining=Math.max(0,goal-p.qty),up=p.totalPnl>=0,quoteCurrency=state.currency==='BTC'?'USD':state.currency;
+    const p=state.view.position,goal=nextGoal(p.qty),goalPct=Math.min(100,goal>0?p.qty/goal*100:0),remaining=Math.max(0,goal-p.qty),up=p.unreal>=0,quoteCurrency=state.currency==='BTC'?'USD':state.currency;
     // Patrimônio total = valor de mercado dos BTC + caixa disponível (em USD).
     // Em modo BTC o total em dinheiro não se aplica, então mostramos a quantidade.
     const cashUsdHero=state.data.cash?n(state.data.cash.balanceUsd):0;
@@ -1331,15 +1331,15 @@
     $('heroInvestor').textContent=state.investor==='all'?'Todos os investidores':state.investor;
     // Selo de variação (percentual sobre o capital líquido investido).
     $('heroSeal').className='hero-seal'+(up?'':' down');
-    $('heroPnlPct').textContent=(up?'+':'')+pct(p.net?p.totalPnl/p.net*100:0).replace('+','');
+    $('heroPnlPct').textContent=(up?'+':'')+pct(p.cost?p.unreal/p.cost*100:0).replace('+','');
     if($('heroSealArrow'))$('heroSealArrow').textContent=up?'▲':'▼';
     // Trilha de métricas: Aportado · Lucro · Preço médio · Caixa.
     const cashUsd=cashUsdHero;
     const editSvg='<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>';
     const metrics=[
       {label:'Aportado',value:money(p.cost),cls:''},
-      {label:'Resultado',value:(up?'+':'-')+money(Math.abs(p.totalPnl)),cls:up?'positive':'negative',
-        sub:'posição '+(p.unreal>=0?'+':'−')+money(Math.abs(p.unreal))+(Math.abs(p.realized)>0.005?' · vendas '+(p.realized>=0?'+':'−')+money(Math.abs(p.realized)):'')},
+      {label:'Resultado',value:(up?'+':'-')+money(Math.abs(p.unreal)),cls:up?'positive':'negative',
+        sub:'investi '+money(p.cost)+' · tenho '+money(p.value)},
       {label:'Preço médio',value:p.avg?money(p.avg,quoteCurrency):'—',cls:''},
       {label:'Caixa',value:money(cashUsd,state.currency),cls:cashUsd<-1e-6?'negative':'',action:`<button class="hm-gear" onclick="openCashModal()" title="Editar caixa" aria-label="Editar caixa">${editSvg}</button>`}
     ];
