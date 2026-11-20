@@ -10,7 +10,7 @@
  */
 
 var APP = Object.freeze({
-  VERSION: '2.28.0',
+  VERSION: '2.29.0',
   SHEETS: {
     IRPF: 'IRPF',
     CONTRIBUTIONS: 'Aportes',
@@ -66,6 +66,14 @@ var APP = Object.freeze({
 // passou a viver nas Propriedades do script.
 var FX_COLUMN = 9;
 var FX_HEADER = 'Dólar R$';
+
+// DCA de venda: 20% da posição, diluída semanalmente entre 480 e 550 dias
+// depois do halving (70 dias = 10 semanas).
+var SELL_PLAN = Object.freeze({
+  START_DAYS_AFTER_HALVING: 480,
+  END_DAYS_AFTER_HALVING: 550,
+  PCT_OF_POSITION: 0.20
+});
 
 var DCA_PLAN = Object.freeze({
   START_DAYS_BEFORE_HALVING: 725,
@@ -547,6 +555,7 @@ function getDashboardData() {
     halving: halving,
     onchain: getCachedOnChainSnapshot_(),
     contributions: contributions,
+    sellPlan: (function(){ try { return buildSellPlan_(market, halving, contributions); } catch (e) { console.warn('Plano de venda indisponível: ' + e.message); return { active:false, reason:'error' }; } })(),
     dailyHistory: daily,
     monthlyHistory: monthly,
     position: currentState,
@@ -898,6 +907,83 @@ function setSpecialCashUsd_(v) {
  * Soma (USD) dos aportes do caixa NORMAL feitos na semana corrente (domingo→sábado).
  * Conta só origem 'Caixa' (DCA). Ignora 'Especial', 'Ajuste' e dinheiro novo.
  */
+/**
+ * Plano de venda: 20% da posição diluída nas 10 semanas entre 480 e 550 dias
+ * depois do próximo halving. Só informativo — não mexe em saldo nem em PM.
+ */
+function buildSellPlan_(market, halving, contributions) {
+  var plan = {
+    active: false, reason: 'inactive', pctOfPosition: SELL_PLAN.PCT_OF_POSITION,
+    weeksTotal: Math.round((SELL_PLAN.END_DAYS_AFTER_HALVING - SELL_PLAN.START_DAYS_AFTER_HALVING) / 7)
+  };
+  var daysToHalving = (halving && typeof halving.days === 'number' && isFinite(halving.days)) ? halving.days : null;
+  if (daysToHalving === null) { plan.reason = 'no-halving'; return plan; }
+
+  var halvingDate = halving && halving.targetDate ? new Date(halving.targetDate) : null;
+  if (!halvingDate || isNaN(halvingDate.getTime())) { plan.reason = 'no-halving'; return plan; }
+
+  var windowStartIso = toIsoDate_(new Date(halvingDate.getTime() + SELL_PLAN.START_DAYS_AFTER_HALVING * 86400000));
+  var windowEndIso = toIsoDate_(new Date(halvingDate.getTime() + SELL_PLAN.END_DAYS_AFTER_HALVING * 86400000));
+  plan.windowStartIso = windowStartIso;
+  plan.windowEndIso = windowEndIso;
+  plan.daysToHalving = daysToHalving;
+  plan.daysToWindow = daysToHalving + SELL_PLAN.START_DAYS_AFTER_HALVING; // >0 = ainda não começou
+
+  var pos = calculatePosition_(contributions || [], cleanNumber_(market.btcUsd));
+  var priceUsd = cleanNumber_(market.btcUsd);
+  var fx = cleanNumber_(market.usdBrl) || 1;
+  var targetBtc = Math.max(0, pos.quantityBtc * SELL_PLAN.PCT_OF_POSITION);
+  plan.targetBtc = targetBtc;
+  plan.targetUsd = round2_(targetBtc * priceUsd);
+  plan.positionBtc = pos.quantityBtc;
+
+  // Vendas já feitas dentro da janela (compras negativas, excl. ajustes).
+  var soldBtc = 0, soldUsd = 0, weeksDone = 0;
+  (contributions || []).forEach(function (c) {
+    if (c.isAdjustment || c.isCoinAdjustment) return;
+    if (c.date < windowStartIso || c.date > windowEndIso) return;
+    if (c.quantity < 0 || c.amountUsd < 0) {
+      soldBtc += Math.abs(c.quantity);
+      soldUsd += Math.abs(c.amountUsd);
+    }
+  });
+  plan.soldBtc = soldBtc;
+  plan.soldUsd = round2_(soldUsd);
+  plan.soldPct = targetBtc > 0 ? Math.min(100, soldBtc / targetBtc * 100) : 0;
+
+  var totalWeeks = plan.weeksTotal;
+  if (daysToHalving > -SELL_PLAN.START_DAYS_AFTER_HALVING) {
+    plan.reason = 'before-window';
+    plan.weeksRemaining = totalWeeks;
+    plan.weeklyBtc = totalWeeks > 0 ? targetBtc / totalWeeks : 0;
+    plan.weeklyUsd = round2_(plan.weeklyBtc * priceUsd);
+    plan.weeklyBrl = round2_(plan.weeklyBtc * priceUsd * fx);
+    return plan;
+  }
+  if (daysToHalving < -SELL_PLAN.END_DAYS_AFTER_HALVING) {
+    plan.reason = 'after-window';
+    plan.weeksRemaining = 0;
+    plan.weeklyBtc = 0; plan.weeklyUsd = 0; plan.weeklyBrl = 0;
+    return plan;
+  }
+
+  plan.active = true;
+  plan.reason = 'in-window';
+  var diasDentro = Math.max(0, Math.floor(-daysToHalving - SELL_PLAN.START_DAYS_AFTER_HALVING));
+  weeksDone = Math.min(totalWeeks, Math.floor(diasDentro / 7));
+  var weeksRemaining = Math.max(1, totalWeeks - weeksDone);
+  var remainingBtc = Math.max(0, targetBtc - soldBtc);
+  plan.weeksDone = weeksDone;
+  plan.weeksRemaining = weeksRemaining;
+  plan.remainingBtc = remainingBtc;
+  plan.weeklyBtc = remainingBtc / weeksRemaining;
+  plan.weeklyUsd = round2_(plan.weeklyBtc * priceUsd);
+  plan.weeklyBrl = round2_(plan.weeklyBtc * priceUsd * fx);
+  plan.priceUsd = round2_(priceUsd);
+  plan.usdBrl = fx;
+  return plan;
+}
+
 function cashBuysThisWeekUsd_(contributions, market) {
   if (!contributions || !contributions.length) return 0;
   var now = new Date();

@@ -263,6 +263,29 @@
       .heat-chips{padding:0 14px 10px;gap:6px}
     }
     /* DCA — card único (proposta A) */
+    .sell-card{display:grid;grid-template-columns:290px 1fr;gap:0;border:1px solid var(--border);border-radius:16px;background:var(--surface);overflow:hidden;margin-top:14px}
+    .sell-left{padding:20px 22px;border-right:1px solid var(--border);background:linear-gradient(180deg,rgba(167,139,250,.09),rgba(167,139,250,.02))}
+    .sell-k{font-size:8.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+    .sell-big{font-size:30px;font-weight:800;letter-spacing:-1.2px;color:var(--text);margin-top:6px;line-height:1.05;font-variant-numeric:tabular-nums}
+    .sell-unit{font-size:11px;font-weight:700;color:var(--soft);margin-left:4px}
+    .sell-sub{font-size:10px;color:var(--soft);margin-top:6px}
+    .sell-right{padding:20px 22px;display:flex;flex-direction:column;gap:14px}
+    .sell-strip{display:flex;gap:5px}
+    .sell-tick{flex:1;height:8px;border-radius:3px;background:var(--border)}
+    .sell-tick.done{background:#a78bfa}
+    .sell-tick.now{background:#c4b5fd}
+    .sell-rows{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 18px}
+    .sell-row{display:flex;flex-direction:column;gap:2px}
+    .sell-row span{font-size:7.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+    .sell-row b{font-size:12.5px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
+    .sell-note{font-size:9.5px;color:var(--soft);line-height:1.5}
+    @media(max-width:820px){
+      .sell-card{grid-template-columns:1fr}
+      .sell-left{border-right:0;border-bottom:1px solid var(--border);padding:16px}
+      .sell-right{padding:16px}
+      .sell-big{font-size:24px}
+      .sell-rows{gap:8px 12px}
+    }
     .dca-a{display:grid;grid-template-columns:388px 1fr;padding:0;overflow:hidden}
     .dca-a-left{padding:16px 18px;border-right:1px solid var(--border);display:flex;flex-direction:column}
     .dca-a-label{font-size:8.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:800}
@@ -616,6 +639,7 @@
       <section id="dca" class="hidden">
         <div class="section-head"><div><div class="section-kicker">Aportes recorrentes</div><h2 class="section-title">Meu DCA <button type="button" class="dca-help-btn" onclick="openDcaHelp()" aria-label="Como funciona o DCA por intensidade">?</button></h2></div><div class="section-note" id="dcaNote">Ciclo de compras semanais ativo</div></div>
         <div id="dcaPlan"></div>
+        <div id="sellDca"></div>
 
       </section>
 
@@ -1319,7 +1343,7 @@
     catch(e){toast(e.message,'error')}
   }
 
-  function render(){state.view=buildView();renderHero();renderKpis();renderOnchain();renderCharts();renderInsights();renderDca();renderMonthly();renderTrades();updateBanditCount();if(document.getElementById('banditModal').classList.contains('open'))renderBandit();$('appVersion').textContent=state.data.version||'2';if($('brandVersion'))$('brandVersion').textContent='v'+(state.data.version||'—');document.body.classList.toggle('privacy',state.privacy)}
+  function render(){state.view=buildView();renderHero();renderKpis();renderOnchain();renderCharts();renderInsights();renderDca();renderMonthly();renderTrades();renderSellDca();updateBanditCount();if(document.getElementById('banditModal').classList.contains('open'))renderBandit();$('appVersion').textContent=state.data.version||'2';if($('brandVersion'))$('brandVersion').textContent='v'+(state.data.version||'—');document.body.classList.toggle('privacy',state.privacy)}
   function renderHero(){
     const p=state.view.position,goal=nextGoal(p.qty),goalPct=Math.min(100,goal>0?p.qty/goal*100:0),remaining=Math.max(0,goal-p.qty),up=p.unreal>=0,quoteCurrency=state.currency==='BTC'?'USD':state.currency;
     // Patrimônio total = valor de mercado dos BTC + caixa disponível (em USD).
@@ -1728,6 +1752,69 @@
       ticksEl.addEventListener('mouseout',esconder);
       ticksEl.addEventListener('touchstart',ev=>{mostrar(ev);setTimeout(esconder,2400)},{passive:true});
     }
+  }
+
+  // ===========================================================================
+  // DCA DE VENDA — 20% da posição, 10 semanas entre 480 e 550 dias após o halving
+  // ===========================================================================
+  function renderSellDca(){
+    const alvo=$('sellDca'); if(!alvo) return;
+    const sp=(state.data&&state.data.sellPlan)||null;
+    if(!sp||sp.reason==='no-halving'||sp.reason==='error'){
+      alvo.innerHTML='<div class="sell-card"><div class="sell-left"><div class="sell-k">DCA de venda</div>'+
+        '<div class="sell-big">—</div><div class="sell-sub">Sem halving estimado no momento.</div></div>'+
+        '<div class="sell-right"><div class="sell-note">O plano de venda aparece quando o halving estimado estiver disponível.</div></div></div>';
+      return;
+    }
+    const m=state.data.market||{};
+    const cur=state.currency==='BRL'?'BRL':'USD';
+    const fx=n(m.usdBrl)||1;
+    const semanas=Math.max(1,n(sp.weeksTotal));
+    const ativo=sp.reason==='in-window';
+    const antes=sp.reason==='before-window';
+    const passou=sp.reason==='after-window';
+    const alvoBtc=n(sp.targetBtc);
+    const semBtc=n(sp.weeklyBtc);
+    const semValor=cur==='BRL'?semBtc*n(m.btcUsd)*fx:semBtc*n(m.btcUsd);
+    const big=antes
+      ? '<div class="sell-big">'+semBtc.toFixed(8)+'<span class="sell-unit">BTC</span></div>'+
+        '<div class="sell-sub">por semana · ≈ '+money(semValor,cur)+'</div>'
+      : ativo
+        ? '<div class="sell-big">'+semBtc.toFixed(8)+'<span class="sell-unit">BTC</span></div>'+
+          '<div class="sell-sub">vender nesta semana · ≈ '+money(semValor,cur)+'</div>'
+        : '<div class="sell-big">'+alvoBtc.toFixed(8)+'<span class="sell-unit">BTC</span></div>'+
+          '<div class="sell-sub">janela encerrada · vendido '+n(sp.soldBtc).toFixed(8)+' BTC</div>';
+
+    const feitas=ativo?n(sp.weeksDone):(antes?0:semanas);
+    const ticks=Array.from({length:semanas},(_,i)=>{
+      const cls=i<feitas?'done':(ativo&&i===feitas?'now':'');
+      return '<span class="sell-tick '+cls+'"></span>';
+    }).join('');
+
+    const status=antes
+      ? 'Começa em '+fmtDate(sp.windowStartIso)+' · faltam '+Math.max(0,Math.round(n(sp.daysToWindow)))+' dias ('+Math.round(n(sp.daysToWindow)/7)+' semanas)'
+      : ativo
+        ? 'Semana '+(n(sp.weeksDone)+1)+' de '+semanas+' · '+Math.round(n(sp.soldPct))+'% vendido'
+        : 'Encerrada em '+fmtDate(sp.windowEndIso);
+
+    alvo.innerHTML='<div class="sell-card">'+
+      '<div class="sell-left">'+
+        '<div class="sell-k">DCA de venda · 20% da posição</div>'+big+
+        '<div class="sell-sub" style="margin-top:10px">'+status+'</div>'+
+        '<div class="sell-sub" style="margin-top:2px">total ≈ '+money(alvoBtc*n(m.btcUsd),cur)+' em '+semanas+' semanas</div>'+
+      '</div>'+
+      '<div class="sell-right">'+
+        '<div class="sell-strip">'+ticks+'</div>'+
+        '<div class="sell-rows">'+
+          '<div class="sell-row"><span>Total a vender</span><b class="private">'+alvoBtc.toFixed(8)+' BTC · '+money(alvoBtc*n(m.btcUsd),cur)+'</b></div>'+
+          '<div class="sell-row"><span>Já vendido na janela</span><b class="private">'+n(sp.soldBtc).toFixed(8)+' BTC · '+money(n(sp.soldUsd)*(cur==='BRL'?fx:1),cur)+'</b></div>'+
+          '<div class="sell-row"><span>Janela</span><b>'+fmtDate(sp.windowStartIso)+' → '+fmtDate(sp.windowEndIso)+'</b></div>'+
+          '<div class="sell-row"><span>Semanas</span><b>'+semanas+(ativo?' · '+Math.max(0,semanas-feitas)+' restantes':(passou?' · encerradas':' · a começar'))+'</b></div>'+
+        '</div>'+
+        '<div class="sell-note">Diluir a venda em 10 semanas evita acertar o topo no escuro. '+
+          'Nos 3 ciclos com dados (2016, 2020, 2024) o topo caiu <b>dentro</b> desta janela.</div>'+
+      '</div>'+
+    '</div>';
   }
 
   function renderDca(){

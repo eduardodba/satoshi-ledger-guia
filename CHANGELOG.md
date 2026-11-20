@@ -7,6 +7,23 @@ Formato: `versão · data`
 
 ---
 
+## 2.29 · 20/11/2026 — DCA de venda
+
+- Novo card **DCA de venda**: **20% da posição** diluída em **10 semanas**, entre
+  **480 e 550 dias depois do halving**.
+- Mostra o alvo semanal (BTC e R$/US$), o total, o que já foi vendido na janela e
+  uma fita com o andamento das 10 semanas.
+- Validado com preços reais: nos ciclos de 2016, 2020 e 2024 o **topo caiu dentro
+  da janela** (média de 62%, 80% e 91% do pico).
+
+## 2.28 · 20/11/2026 — Resultado = investido × hoje
+
+- O hero passou a mostrar **Resultado** como a diferença entre **o que você
+  investiu** e **o que tem hoje** (posição), com a linha
+  `investi $X · tenho $Y`.
+- O selo virou **Sobre o investido** e passou a refletir a posição (antes somava
+  o lucro das vendas, o que confundia).
+
 ## 2.26 · 18/11/2026 — Meta em dinheiro
 
 - **Quanto falta para a meta também em R$ ou US$**, conforme a moeda escolhida no

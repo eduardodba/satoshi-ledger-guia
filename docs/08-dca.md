@@ -119,3 +119,39 @@ caixa ÷ menos semanas).
 mas não é dinheiro novo.
 
 **E a compra especial?** Não conta para a cota; consome o caixa especial.
+
+---
+
+## DCA de venda (saída planejada)
+
+O DCA de compra acumula; o **DCA de venda** planeja a saída.
+
+**A regra:** vender **20% da posição**, diluído em **10 semanas** (uma venda por
+semana), na janela de **480 a 550 dias depois do halving**.
+
+### Por que essa janela
+
+O topo dos últimos ciclos aconteceu **dentro** dela:
+
+| Ciclo | Janela (480→550 dias) | Preço médio na janela | Topo do ciclo | Média ÷ topo |
+|---|---|---|---|---|
+| 2016 | 01/11/2017 → 10/01/2018 | $12.116 | $19.650 (16/12/17) | 62% |
+| 2020 | 03/09/2021 → 12/11/2021 | $54.060 | $67.555 (08/11/21) | 80% |
+| 2024 | 13/08/2025 → 22/10/2025 | $114.028 | $124.720 (06/10/25) | 91% |
+
+Nos três ciclos o **pico caiu dentro da janela**. Vender diluído capturou mais do
+que uma venda única no 500º dia (que pegaria $8.109 / $44.898 / $111.248).
+
+> O ciclo de 2013 é a exceção: o topo veio 371 dias após o halving, antes da
+> janela. Como em qualquer padrão com 3 amostras, não é garantia.
+
+### O que o card mostra
+
+- **Vender nesta semana** — a quantidade de BTC da semana e o valor em R$/US$
+- **Total a vender** — 20% da posição
+- **Já vendido na janela** — soma das vendas registradas dentro do período
+- **Janela** e **semanas** (a começar / em andamento / encerradas)
+- Uma fita de 10 marcas mostrando o andamento
+
+Quando a janela ainda não começou, o card já mostra o **alvo semanal** para você
+planejar. Quando termina, mostra quanto foi vendido.
