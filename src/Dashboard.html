@@ -290,16 +290,16 @@
     .dca-a-left{padding:16px 18px;border-right:1px solid var(--border);display:flex;flex-direction:column}
     .dca-a-label{font-size:8.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:800}
     .dca-a-big{font-size:34px;font-weight:800;color:var(--btc);letter-spacing:-1.2px;line-height:1;margin-top:12px}
-    .dca-a.dca-sell .dca-a-big{color:#a78bfa}
-    .dca-a.dca-sell .dca-a-ticks i.on{background:#a78bfa}
-    .dca-a.dca-sell .dca-a-ticks i.now{background:#c4b5fd}
-    .dca-a.dca-sell .dca-a-label{color:#a78bfa}
+    .dca-a.dca-sell .dca-a-big{color:var(--btc)}
+    .dca-a.dca-sell .dca-a-ticks i.on{background:var(--btc)}
+    .dca-a.dca-sell .dca-a-ticks i.now{background:rgba(247,147,26,.35)}
+    .dca-a.dca-sell .dca-a-label{color:var(--muted)}
     .dca-a.dca-sell .dca-a-left{background:transparent}
-    .dca-a.dca-sell .dca-a-done{background:rgba(167,139,250,.14);color:#a78bfa}
+    .dca-a.dca-sell .dca-a-done{background:rgba(247,147,26,.14);color:#d97706;border-color:rgba(247,147,26,.32)}
     .dca-mini-leg{display:inline-flex;align-items:center;gap:5px;font-size:8.5px;font-weight:700;letter-spacing:0;text-transform:none;color:var(--soft)}
     .dca-mini-leg i{width:9px;height:3px;border-radius:2px;display:inline-block}
-    .dca-mini-leg i.l1{background:#a78bfa}
-    .dca-mini-leg i.l2{background:rgba(167,139,250,.55);margin-left:6px}
+    .dca-mini-leg i.l1{background:var(--btc)}
+    .dca-mini-leg i.l2{background:rgba(247,147,26,.45);margin-left:6px}
     .dca-a-big.done{color:var(--green)}
     .dca-a-meta{font-size:10px;color:var(--soft);margin-top:8px}
     .dca-a-two{display:flex;gap:18px;margin-top:14px;flex-wrap:wrap;row-gap:8px}
@@ -1839,14 +1839,14 @@
     const vendido=porSemana.map(v=>{acc+=v;return acc;});
     const plano=Array.from({length:total},(_,i)=>alvo*(i+1)/total);
     const labels=Array.from({length:total},(_,i)=>'S'+(i+1));
-    const cor='#a78bfa';
+    const cor='#f59e0b';
 
     state.charts[key]=new Chart(canvas,{type:'line',data:{labels,datasets:[
-      {label:'Plano',data:plano,borderColor:'rgba(167,139,250,.55)',borderWidth:1.6,borderDash:[6,4],pointRadius:0,tension:0,fill:false},
+      {label:'Plano',data:plano,borderColor:'rgba(245,158,11,.55)',borderWidth:1.6,borderDash:[6,4],pointRadius:0,tension:0,fill:false},
       {label:'Vendido',data:vendido,borderColor:cor,borderWidth:2.2,pointRadius:0,tension:0,fill:'-1',
-        backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return 'rgba(167,139,250,.16)';
+        backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return 'rgba(245,158,11,.16)';
           const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);
-          g.addColorStop(0,'rgba(167,139,250,.30)');g.addColorStop(1,'rgba(167,139,250,.02)');return g;}}
+          g.addColorStop(0,'rgba(245,158,11,.30)');g.addColorStop(1,'rgba(245,158,11,.02)');return g;}}
     ]},options:{responsive:true,maintainAspectRatio:false,animation:false,
       interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},tooltip:{callbacks:{
