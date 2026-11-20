@@ -296,6 +296,10 @@
     .dca-a.dca-sell .dca-a-label{color:#a78bfa}
     .dca-a.dca-sell .dca-a-left{background:transparent}
     .dca-a.dca-sell .dca-a-done{background:rgba(167,139,250,.14);color:#a78bfa}
+    .dca-mini-leg{display:inline-flex;align-items:center;gap:5px;font-size:8.5px;font-weight:700;letter-spacing:0;text-transform:none;color:var(--soft)}
+    .dca-mini-leg i{width:9px;height:3px;border-radius:2px;display:inline-block}
+    .dca-mini-leg i.l1{background:#a78bfa}
+    .dca-mini-leg i.l2{background:rgba(167,139,250,.55);margin-left:6px}
     .dca-a-big.done{color:var(--green)}
     .dca-a-meta{font-size:10px;color:var(--soft);margin-top:8px}
     .dca-a-two{display:flex;gap:18px;margin-top:14px;flex-wrap:wrap;row-gap:8px}
@@ -1773,6 +1777,7 @@
     const vendidoBtc=n(sp.soldBtc);
     const semValor=cur==='BRL'?semBtc*spot*fx:semBtc*spot;
     const totalValor=cur==='BRL'?alvoBtc*spot*fx:alvoBtc*spot;
+    const pctVend=alvoBtc>0?Math.min(100,vendidoBtc/alvoBtc*100):0;
     const dIni=sp.windowStartIso?fmtDate(sp.windowStartIso):'—';
     const dFim=sp.windowEndIso?fmtDate(sp.windowEndIso):'—';
     const faltam=antes?total:Math.max(0,total-feitas);
@@ -1797,15 +1802,17 @@
           <div class="dca-a-meta">${meta}</div>
           <div class="dca-a-cycle">
             <div class="dca-a-line"><span class="k">A vender</span><b>${alvoBtc.toFixed(8)} BTC</b></div>
-            <div class="dca-a-line"><span class="k">Já vendido</span><b>${vendidoBtc.toFixed(8)} BTC</b></div>
-            <div class="dca-a-line"><span class="k">Estimado</span><b>${money(totalValor,cur)}</b></div>
+            <div class="dca-a-line"><span class="k">Já vendido</span><b>${vendidoBtc.toFixed(8)} BTC</b><em class="${pctVend>=100?'positive':''}">${pctVend.toFixed(0)}%</em></div>
+            <div class="dca-a-line"><span class="k">Caixa gerado</span><b>${money(n(sp.soldUsd)*(cur==='BRL'?fx:1),cur)}</b></div>
+            <div class="dca-a-line"><span class="k">Estimado total</span><b>${money(totalValor,cur)}</b></div>
           </div>
         </div>
         <div class="dca-a-right">
           <div class="dca-a-head"><span>Ciclo de vendas</span><b>semana ${antes?0:feitas} de ${total}</b><em>${pctProg}%</em></div>
           <div class="dca-a-ticks">${ticks}</div>
           <div class="dca-a-dates"><span>${dIni}</span><span>${antes?'faltam '+Math.max(0,Math.round(n(sp.daysToWindow)/7))+' semanas':'faltam '+faltam+' '+(faltam===1?'semana':'semanas')}</span><span>${dFim}</span></div>
-          <div class="dca-a-sparkhead"><span>Venda por semana</span><em>${money(semValor,cur)}</em></div>
+          <div class="dca-a-sparkhead"><span>Vendido × plano</span>
+            <em class="dca-mini-leg"><i class="l1"></i>vendido<i class="l2"></i>plano</em></div>
           <div class="dca-a-spark"><canvas id="sellSpark"></canvas></div>
         </div>
       </article>`;
@@ -1814,19 +1821,39 @@
   function renderDcaChartVenda(){
     const key='sell'; destroyChart(key);
     const sp=state.data&&state.data.sellPlan; const canvas=$('sellSpark');
-    if(!sp||!canvas) return;
+    if(!sp||!canvas||!sp.windowStartIso) return;
     const m=state.data.market||{}, cur=state.currency==='BRL'?'BRL':'USD', fx=n(m.usdBrl)||1, spot=n(m.btcUsd);
     const total=Math.max(1,n(sp.weeksTotal));
-    const feitas=Math.max(0,n(sp.weeksDone));
-    const semValor=n(sp.weeklyBtc)*spot*(cur==='BRL'?fx:1);
+    const alvo=n(sp.targetBtc);
+    const iniSemana=parseDate(sp.windowStartIso);
+
+    // vendas reais dentro da janela, agrupadas por semana
+    const vendas=(state.view.transactions||[]).filter(t=>!isAdjustment(t)&&!isCoinAdjustment(t)&&(n(t.quantity)<0||n(t.amountUsd)<0))
+      .filter(t=>t.date>=sp.windowStartIso&&t.date<=sp.windowEndIso);
+    const porSemana=Array(total).fill(0);
+    vendas.forEach(t=>{
+      const w=Math.floor((parseDate(t.date)-iniSemana)/(7*86400000));
+      if(w>=0&&w<total) porSemana[w]+=Math.abs(n(t.quantity));
+    });
+    let acc=0;
+    const vendido=porSemana.map(v=>{acc+=v;return acc;});
+    const plano=Array.from({length:total},(_,i)=>alvo*(i+1)/total);
     const labels=Array.from({length:total},(_,i)=>'S'+(i+1));
-    const dados=labels.map(()=>semValor);
-    const cores=labels.map((_,i)=>i<feitas?'rgba(167,139,250,.9)':'rgba(167,139,250,.3)');
-    state.charts[key]=new Chart(canvas,{type:'bar',data:{labels,datasets:[{data:dados,backgroundColor:cores,borderRadius:5,borderSkipped:false}]},
-      options:{responsive:true,maintainAspectRatio:false,animation:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>money(c.parsed.y,cur)+' na semana'}}},
-        scales:{x:{grid:{display:false},ticks:{color:'#8c96a8',font:{size:8}}},
-                y:{display:false,beginAtZero:true}}}});
+    const cor='#a78bfa';
+
+    state.charts[key]=new Chart(canvas,{type:'line',data:{labels,datasets:[
+      {label:'Plano',data:plano,borderColor:'rgba(167,139,250,.55)',borderWidth:1.6,borderDash:[6,4],pointRadius:0,tension:0,fill:false},
+      {label:'Vendido',data:vendido,borderColor:cor,borderWidth:2.2,pointRadius:0,tension:0,fill:'-1',
+        backgroundColor:(c)=>{const{ctx,chartArea}=c.chart;if(!chartArea)return 'rgba(167,139,250,.16)';
+          const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);
+          g.addColorStop(0,'rgba(167,139,250,.30)');g.addColorStop(1,'rgba(167,139,250,.02)');return g;}}
+    ]},options:{responsive:true,maintainAspectRatio:false,animation:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        title:items=>'Semana '+(items[0].dataIndex+1)+' de '+total,
+        label:c=>c.dataset.label+': '+c.parsed.y.toFixed(8)+' BTC'+(c.dataset.label==='Vendido'?' · ≈ '+money(c.parsed.y*spot*(cur==='BRL'?fx:1),cur):'')}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8c96a8',font:{size:8}}},
+              y:{display:false,beginAtZero:true,suggestedMax:alvo*1.05}}}});
   }
 
   function renderDca(){
