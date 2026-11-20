@@ -264,7 +264,7 @@
     }
     /* DCA — card único (proposta A) */
     .sell-card{display:grid;grid-template-columns:290px 1fr;gap:0;border:1px solid var(--border);border-radius:16px;background:var(--surface);overflow:hidden;margin-top:14px}
-    .sell-left{padding:20px 22px;border-right:1px solid var(--border);background:linear-gradient(180deg,rgba(167,139,250,.09),rgba(167,139,250,.02))}
+    .sell-left{padding:20px 22px;border-right:1px solid var(--border);background:transparent}
     .sell-k{font-size:8.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
     .sell-big{font-size:30px;font-weight:800;letter-spacing:-1.2px;color:var(--text);margin-top:6px;line-height:1.05;font-variant-numeric:tabular-nums}
     .sell-unit{font-size:11px;font-weight:700;color:var(--soft);margin-left:4px}
@@ -290,12 +290,12 @@
     .dca-a-left{padding:16px 18px;border-right:1px solid var(--border);display:flex;flex-direction:column}
     .dca-a-label{font-size:8.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:800}
     .dca-a-big{font-size:34px;font-weight:800;color:var(--btc);letter-spacing:-1.2px;line-height:1;margin-top:12px}
-    .dca-a.sell .dca-a-big{color:#a78bfa}
-    .dca-a.sell .dca-a-ticks i.on{background:#a78bfa}
-    .dca-a.sell .dca-a-ticks i.now{background:#c4b5fd}
-    .dca-a.sell .dca-a-label{color:#a78bfa}
-    .dca-a.sell .dca-a-left{background:linear-gradient(180deg,rgba(167,139,250,.07),transparent 60%)}
-    .dca-a.sell .dca-a-done{background:rgba(167,139,250,.14);color:#a78bfa}
+    .dca-a.dca-sell .dca-a-big{color:#a78bfa}
+    .dca-a.dca-sell .dca-a-ticks i.on{background:#a78bfa}
+    .dca-a.dca-sell .dca-a-ticks i.now{background:#c4b5fd}
+    .dca-a.dca-sell .dca-a-label{color:#a78bfa}
+    .dca-a.dca-sell .dca-a-left{background:transparent}
+    .dca-a.dca-sell .dca-a-done{background:rgba(167,139,250,.14);color:#a78bfa}
     .dca-a-big.done{color:var(--green)}
     .dca-a-meta{font-size:10px;color:var(--soft);margin-top:8px}
     .dca-a-two{display:flex;gap:18px;margin-top:14px;flex-wrap:wrap;row-gap:8px}
@@ -1787,7 +1787,7 @@
       : '≈ '+money(semValor,cur)+' · 20% da posição · '+faltam+' '+(faltam===1?'semana':'semanas')+' restantes';
 
     el.innerHTML=`
-      <article class="card dca-a sell">
+      <article class="card dca-a dca-sell">
         <div class="dca-a-left">
           <div class="dca-a-top">
             <span class="dca-a-label">Venda da semana</span>
