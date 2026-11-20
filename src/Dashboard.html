@@ -160,6 +160,18 @@
     .an-tab th{text-align:right;font-size:8px;letter-spacing:.4px;text-transform:uppercase;color:var(--soft);padding:0 0 6px;font-weight:800}
     .an-tab th:first-child{text-align:left}
     .an-tab td{padding:7px 0;border-top:1px solid var(--border);text-align:right}
+    .an-tab-proj th,.an-tab-proj td{padding-left:8px;padding-right:8px}
+    .an-tab-proj th:first-child,.an-tab-proj td:first-child{padding-left:0}
+    .an-tab-proj tr.an-now td{color:var(--muted);font-weight:700;background:var(--surface-2)}
+    .an-tab-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    @media(max-width:760px){
+      .an-tab-proj{font-size:8.5px;min-width:0;width:100%}
+      .an-tab-proj th,.an-tab-proj td{padding:6px 2px;letter-spacing:-.2px;white-space:nowrap}
+      .an-tab-proj th{font-size:7px}
+      /* no celular ficam: cenário, preço, você teria e a mais vs hoje */
+      .an-tab-proj th:nth-child(3),.an-tab-proj td:nth-child(3),
+      .an-tab-proj th:nth-child(5),.an-tab-proj td:nth-child(5){display:none}
+    }
     .an-tab td:first-child{text-align:left;color:var(--muted);font-weight:700}
     .an-tab tr.an-hl td{background:color-mix(in srgb,var(--btc) 7%,transparent)}
     .an-tab tr.an-hl td:first-child{color:var(--btc)}
@@ -1112,13 +1124,23 @@
     const cenarios=[25,50,100,200].map(x=>({rot:'+'+x+'%',mult:1+x/100}));
     if(topo.p>spot)cenarios.push({rot:'topo anterior',mult:topo.p/spot,destaque:true});
     cenarios.sort((a,b)=>a.mult-b.mult);
+    const moedaPreco=cur==='BRL'?'BRL':'USD';
+    const valorHoje=p.qty*spot;
+    // linha de referência: onde estamos hoje
+    const linhaHoje='<tr class="an-now"><td>hoje</td><td>'+directMoney(spot,moedaPreco)+'</td>'+
+      '<td>'+money(p.cost,cur)+'</td><td>'+money(valorHoje,cur)+'</td>'+
+      '<td style="color:'+((valorHoje-p.cost)>=0?'var(--green)':'var(--red)')+'">'+((valorHoje-p.cost)>=0?'+':'−')+money(Math.abs(valorHoje-p.cost),cur)+'</td>'+
+      '<td>—</td></tr>';
     const linhasProj=cenarios.map(c=>{
       const preco=spot*c.mult;
       const patrimonio=p.qty*preco;
       const lucro=patrimonio-p.cost;
+      const aMais=patrimonio-valorHoje;
       const cor=lucro>=0?'var(--green)':'var(--red)';
-      return '<tr'+(c.destaque?' class="an-hl"':'')+'><td>'+c.rot+'</td><td>'+directMoney(preco,cur==='BRL'?'BRL':'USD')+'</td>'+
-        '<td>'+money(patrimonio,cur)+'</td><td style="color:'+cor+'">'+(lucro>=0?'+':'−')+money(Math.abs(lucro),cur)+'</td></tr>';
+      return '<tr'+(c.destaque?' class="an-hl"':'')+'><td>'+c.rot+'</td><td>'+directMoney(preco,moedaPreco)+'</td>'+
+        '<td>'+money(p.cost,cur)+'</td>'+
+        '<td>'+money(patrimonio,cur)+'</td><td style="color:'+cor+'">'+(lucro>=0?'+':'−')+money(Math.abs(lucro),cur)+'</td>'+
+        '<td style="color:'+(aMais>=0?'var(--green)':'var(--red)')+'">'+(aMais>=0?'+':'−')+money(Math.abs(aMais),cur)+'</td></tr>';
     }).join('');
 
     const semanaTxt=dca.active?('semana '+n(plan.weeksDone)+' de '+n(plan.totalWeeks)+(n(plan.weeksRemaining)?' · faltam '+n(plan.weeksRemaining)+' semanas':' · ciclo encerrado')):'fora da janela';
@@ -1159,8 +1181,9 @@
       '<div class="an-sec"><div class="an-h">Projeção <em>hipotética, a partir do preço atual</em></div>'+
         '<p class="an-note">Referência: topo do ciclo anterior em <b>'+directMoney(topo.p,cur==='BRL'?'BRL':'USD')+'</b> ('+fmtDate(topo.d)+'), '+
           'que representou <b>'+multCiclo.toFixed(1).replace('.',',')+'x</b> o fundo de '+directMoney(fundo.p,cur==='BRL'?'BRL':'USD')+' ('+fmtDate(fundo.d)+').</p>'+
-        '<table class="an-tab"><thead><tr><th>Cenário</th><th>Preço do BTC</th><th>Seu patrimônio</th><th>Resultado</th></tr></thead><tbody>'+linhasProj+'</tbody></table>'+
-        '<p class="an-note">Com '+p.qty.toFixed(8).replace('.',',')+' BTC, cada 1% de alta vale aproximadamente '+money(p.qty*spot*0.01,cur)+'.</p>'+
+        '<div class="an-tab-scroll"><table class="an-tab an-tab-proj"><thead><tr><th>Cenário</th><th>Preço do BTC</th><th>Aportado</th><th>Você teria</th><th>Lucro</th><th>A mais vs hoje</th></tr></thead><tbody>'+linhaHoje+linhasProj+'</tbody></table></div>'+
+        '<p class="an-note">Com <b>'+p.qty.toFixed(8).replace('.',',')+' BTC</b>: cada 1% de alta vale aproximadamente '+money(p.qty*spot*0.01,cur)+
+          '. O <b>aporte</b> é o que você tem investido hoje e não muda com o preço; “a mais vs hoje” compara com o patrimônio atual.</p>'+
       '</div>';
   }
 

@@ -7,6 +7,22 @@ Formato: `versão · data`
 
 ---
 
+## 2.32 · 20/11/2026 — Projeção com aporte e ganho
+
+- Na **Análise detalhada → Projeção**, a tabela passou a ter: **cenário**,
+  **preço do BTC**, **aportado**, **você teria**, **lucro** e **a mais vs hoje**.
+- Nova linha **“hoje”** como referência, e o cenário do **topo anterior** destacado.
+- No celular a tabela fica compacta (aporte e lucro saem, ficam cenário, preço,
+  você teria e a mais vs hoje).
+
+## 2.31 · 20/11/2026 — DCA de venda no layout de compra
+
+- Sell e buy usam **o mesmo card**: muda o conteúdo e os textos, não o layout.
+- **Só um aparece por vez**: dentro da janela de venda o card de compra sai de
+  cena; fora dela, o de venda.
+- Venda **sem caixa especial** e com o **mesmo âmbar** da compra.
+- Gráfico **vendido × plano** (acumulado) e **caixa gerado** no card.
+
 ## 2.29 · 20/11/2026 — DCA de venda
 
 - Novo card **DCA de venda**: **20% da posição** diluída em **10 semanas**, entre
