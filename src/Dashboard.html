@@ -1806,13 +1806,15 @@
       '<div class="sell-right">'+
         '<div class="sell-strip">'+ticks+'</div>'+
         '<div class="sell-rows">'+
-          '<div class="sell-row"><span>Total a vender</span><b class="private">'+alvoBtc.toFixed(8)+' BTC · '+money(alvoBtc*n(m.btcUsd),cur)+'</b></div>'+
+          '<div class="sell-row"><span>Total a vender'+(sp.targetFrozen?' · congelado':' · projeção')+'</span><b class="private">'+alvoBtc.toFixed(8)+' BTC · '+money(alvoBtc*n(m.btcUsd),cur)+'</b></div>'+
           '<div class="sell-row"><span>Já vendido na janela</span><b class="private">'+n(sp.soldBtc).toFixed(8)+' BTC · '+money(n(sp.soldUsd)*(cur==='BRL'?fx:1),cur)+'</b></div>'+
           '<div class="sell-row"><span>Janela</span><b>'+fmtDate(sp.windowStartIso)+' → '+fmtDate(sp.windowEndIso)+'</b></div>'+
           '<div class="sell-row"><span>Semanas</span><b>'+semanas+(ativo?' · '+Math.max(0,semanas-feitas)+' restantes':(passou?' · encerradas':' · a começar'))+'</b></div>'+
         '</div>'+
-        '<div class="sell-note">Diluir a venda em 10 semanas evita acertar o topo no escuro. '+
-          'Nos 3 ciclos com dados (2016, 2020, 2024) o topo caiu <b>dentro</b> desta janela.</div>'+
+        '<div class="sell-note">'+(sp.targetFrozen
+            ? 'Alvo congelado em '+fmtDate(sp.targetFrozenIso)+': 20% da posição daquele dia. Compras e vendas posteriores não mudam mais o plano — só o que já foi vendido na janela.'
+            : 'Projeção: 20% da posição de hoje. No primeiro dia da janela o valor é congelado e passa a valer até o fim.')+
+          ' Diluir em 10 semanas evita acertar o topo no escuro.</div>'+
       '</div>'+
     '</div>';
   }

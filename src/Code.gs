@@ -10,7 +10,7 @@
  */
 
 var APP = Object.freeze({
-  VERSION: '2.29.0',
+  VERSION: '2.29.1',
   SHEETS: {
     IRPF: 'IRPF',
     CONTRIBUTIONS: 'Aportes',
@@ -48,6 +48,8 @@ var APP = Object.freeze({
     NOTIFY_WEEKLY: 'NOTIFY_WEEKLY',
     NOTIFY_MONTHLY: 'NOTIFY_MONTHLY',
     NOTIFY_APORTES: 'NOTIFY_APORTES',
+    SELL_TARGET_BTC: 'SELL_TARGET_BTC',
+    SELL_TARGET_ISO: 'SELL_TARGET_ISO',
     LAST_FX: 'LAST_FX'
   }
 });
@@ -932,7 +934,23 @@ function buildSellPlan_(market, halving, contributions) {
   var pos = calculatePosition_(contributions || [], cleanNumber_(market.btcUsd));
   var priceUsd = cleanNumber_(market.btcUsd);
   var fx = cleanNumber_(market.usdBrl) || 1;
-  var targetBtc = Math.max(0, pos.quantityBtc * SELL_PLAN.PCT_OF_POSITION);
+
+  // O alvo de venda é CONGELADO no primeiro dia da janela: 20% da posição
+  // naquele momento. Depois disso, compras ou vendas não mexem mais no plano.
+  var props = PropertiesService.getScriptProperties();
+  var hojeIso = toIsoDate_(new Date());
+  var congelado = cleanNumber_(props.getProperty(APP.PROPERTIES.SELL_TARGET_BTC));
+  var congeladoEm = props.getProperty(APP.PROPERTIES.SELL_TARGET_ISO) || '';
+  var janelaComecou = daysToHalving <= -SELL_PLAN.START_DAYS_AFTER_HALVING;
+  if (janelaComecou && !(congelado > 0)) {
+    congelado = Math.max(0, pos.quantityBtc * SELL_PLAN.PCT_OF_POSITION);
+    props.setProperty(APP.PROPERTIES.SELL_TARGET_BTC, String(congelado));
+    props.setProperty(APP.PROPERTIES.SELL_TARGET_ISO, hojeIso);
+    congeladoEm = hojeIso;
+  }
+  var targetBtc = congelado > 0 ? congelado : Math.max(0, pos.quantityBtc * SELL_PLAN.PCT_OF_POSITION);
+  plan.targetFrozen = congelado > 0;
+  plan.targetFrozenIso = congeladoEm;
   plan.targetBtc = targetBtc;
   plan.targetUsd = round2_(targetBtc * priceUsd);
   plan.positionBtc = pos.quantityBtc;
