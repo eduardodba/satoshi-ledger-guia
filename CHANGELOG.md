@@ -23,6 +23,23 @@ Formato: `versão · data`
 - Venda **sem caixa especial** e com o **mesmo âmbar** da compra.
 - Gráfico **vendido × plano** (acumulado) e **caixa gerado** no card.
 
+## 2.36 · 21/11/2026 — Aposentadoria na análise
+
+- Nova seção **Aposentadoria** na Análise detalhada, baseada no estudo de Smitty
+  (BTC necessário para viver de renda, retirada de 4%).
+- **Três campos ajustáveis**: idade, meta mensal (R$) e ano alvo — tudo recalcula na hora.
+- Mostra o **BTC necessário** para a sua meta e a **sua renda mensal** com a carteira
+  atual, além do percentual da meta já conquistado.
+- Gráfico com uma **curva por idade** (25 a 65, escala log), a **curva da sua idade
+  destacada**, a linha da sua carteira e o marcador do ano escolhido.
+- O modal de análise ficou **enxuto**: saíram os cartões de Acumulação e do DCA
+  corrente (já aparecem no dashboard) — sobrou carteira, projeção e aposentadoria.
+
+## 2.35 · 21/11/2026 — Projeção e ciclo
+
+- Gráfico da **projeção de patrimônio** abaixo da tabela, com a linha do aporte.
+- Bloco **No ciclo** do DCA com cabeçalho centralizado.
+
 ## 2.29 · 20/11/2026 — DCA de venda
 
 - Novo card **DCA de venda**: **20% da posição** diluída em **10 semanas**, entre
