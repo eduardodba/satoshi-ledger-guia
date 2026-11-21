@@ -317,7 +317,30 @@
     .dca-a-two{display:flex;gap:18px;margin-top:14px;flex-wrap:wrap;row-gap:8px}
     .dca-a-two span{display:block;font-size:7.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--soft);font-weight:700}
     .dca-a-two b{font-size:12px}
-    .dca-a-esp{margin-top:auto;padding-top:18px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:0;font-size:10px}
+        .dca-box{border:1px solid var(--border);border-radius:14px;background:var(--surface-2);padding:4px 14px;margin-top:14px}
+    .db-head{padding:6px 0 10px;border-bottom:1px solid var(--border)}
+    .db-head .db-lbl{display:block;margin-bottom:6px}
+    .db-head .db-val{display:flex;align-items:baseline;gap:7px;font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+    .db-head .db-val .ar{color:var(--soft);font-weight:400;font-size:12px}
+    .db-delta{font-size:10px;font-weight:800;letter-spacing:0}
+    .db-delta.neg{color:var(--red)}.db-delta.pos{color:var(--green)}
+    .db-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}
+    .db-row:last-child{border-bottom:0}
+    .db-lbl{display:flex;align-items:center;gap:7px;font-size:8.5px;font-weight:800;letter-spacing:.55px;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+    .db-sw{width:9px;height:9px;border-radius:3px;flex:none}
+    .db-sw.novo{background:rgba(139,92,246,.95)}
+    .db-sw.caixa{background:rgba(34,211,238,.9)}
+    .db-val{font-size:13px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+    .db-val .pct{font-size:9px;font-weight:800;color:var(--soft);margin-left:7px}
+    .db-row.plain .db-lbl{text-transform:none;letter-spacing:0;font-size:10.5px;font-weight:700;color:var(--soft)}
+    .db-row.plain .db-val{font-size:12px}
+    .db-sep{height:1px;background:var(--border);margin:2px 0}
+    @media(max-width:820px){
+      .dca-box{margin-top:12px;padding:4px 12px}
+      .db-head .db-val{font-size:15px}
+      .db-val{font-size:12.5px}
+    }
+.dca-a-esp{margin-top:auto;padding-top:18px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:0;font-size:10px}
     .dca-a-esp .star{color:var(--btc)}
     .dca-a-esp b{font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:var(--btc);font-weight:800;white-space:nowrap}
     .dca-a-esp strong{font-size:13px}
@@ -1733,33 +1756,16 @@
           </div>
           <div class="dca-a-big${complete?' done':''}">${valorMostrado}</div>
           <div class="dca-a-meta">${metaTexto}</div>`}
-          <div class="dca-a-cycle">
-            <div class="dca-a-line">
-              <span class="k">No ciclo</span>
-              <b>${aportadoCiclo>0?money(aportadoCiclo,cur):'—'}</b>
-              <span class="ar">→</span>
-              <b>${valorAtualCiclo>0?money(valorAtualCiclo,cur):'—'}</b>
-              ${deltaCiclo===null?'':`<em class="${deltaCiclo>=0?'positive':'negative'}">${deltaCiclo>=0?'+':''}${deltaCiclo.toFixed(1).replace('.',',')}%</em>`}
+          <div class="dca-box">
+            <div class="db-head">
+              <span class="db-lbl">No ciclo</span>
+              <div class="db-val">${aportadoCiclo>0?money(aportadoCiclo,cur):'—'}<span class="ar">→</span>${valorAtualCiclo>0?money(valorAtualCiclo,cur):'—'}${deltaCiclo===null?'':`<em class="db-delta ${deltaCiclo>=0?'pos':'neg'}">${deltaCiclo>=0?'+':''}${deltaCiclo.toFixed(1).replace('.',',')}%</em>`}</div>
             </div>
-            <div class="dca-a-line">
-              <span class="k">· dinheiro novo</span>
-              <b>${money(n(dcaV.investedNovo),cur)}</b>
-              ${aportadoCiclo>0?`<span class="pct">${(n(dcaV.investedNovo)/aportadoCiclo*100).toFixed(0)}%</span>`:''}
-            </div>
-            <div class="dca-a-line">
-              <span class="k">· do caixa</span>
-              <b>${money(n(dcaV.investedCaixa),cur)}</b>
-              ${aportadoCiclo>0?`<span class="pct">${(n(dcaV.investedCaixa)/aportadoCiclo*100).toFixed(0)}%</span>`:''}
-            </div>
-            <div class="dca-a-line">
-              <span class="k">BTC no ciclo</span>
-              <b>${btcCiclo>0?btcCiclo.toFixed(8).replace('.',',')+' BTC':'—'}</b>
-            </div>
-            <div class="dca-a-line">
-              <span class="k">PM do ciclo</span>
-              <b>${pmCiclo>0?money(pmCiclo,cur):'—'}</b>
-              ${premioPm===null?'':`<em class="${premioPm>=0?'positive':'negative'}">${premioPm>=0?'+':''}${premioPm.toFixed(1).replace('.',',')}%</em>`}
-            </div>
+            <div class="db-row"><span class="db-lbl"><i class="db-sw novo"></i>dinheiro novo</span><span class="db-val">${money(n(dcaV.investedNovo),cur)}${aportadoCiclo>0?`<span class="pct">${(n(dcaV.investedNovo)/aportadoCiclo*100).toFixed(0)}%</span>`:''}</span></div>
+            <div class="db-row"><span class="db-lbl"><i class="db-sw caixa"></i>do caixa</span><span class="db-val">${money(n(dcaV.investedCaixa),cur)}${aportadoCiclo>0?`<span class="pct">${(n(dcaV.investedCaixa)/aportadoCiclo*100).toFixed(0)}%</span>`:''}</span></div>
+            <div class="db-sep"></div>
+            <div class="db-row plain"><span class="db-lbl">BTC no ciclo</span><span class="db-val">${btcCiclo>0?btcCiclo.toFixed(8).replace('.',',')+' BTC':'—'}</span></div>
+            <div class="db-row plain"><span class="db-lbl">PM do ciclo</span><span class="db-val">${pmCiclo>0?money(pmCiclo,cur):'—'}</span></div>
           </div>
           ${somenteCiclo?'':`<div class="dca-a-esp">
             <div class="dca-a-line">
@@ -1777,7 +1783,7 @@
           <div class="dca-a-head"><span>Ciclo de aportes</span><b>semana ${feitos} de ${total}</b><em>${pctProg}%</em></div>
           <div class="dca-a-ticks">${ticks}</div>
           <div class="dca-a-dates"><span>${dIni}</span><span>faltam ${faltam} ${faltam===1?'semana':'semanas'}</span><span>${dFim}</span></div>
-          <div class="dca-a-sparkhead"><span>Aportado (novo · caixa) × valor</span><em class="${deltaPos?'positive':'negative'}">${deltaTxt}</em>
+          <div class="dca-a-sparkhead"><span>Aportado × valor</span><em class="${deltaPos?'positive':'negative'}">${deltaTxt}</em>
             
           </div>
           <div class="dca-a-spark"><canvas id="dcaSpark" class="zoomable" ondblclick="openChartFull('dca')" title="Duplo clique para expandir"></canvas></div>
@@ -1946,8 +1952,6 @@
     const labels=hist.map(p=>fmtDate(p.date));
     const invested=hist.map(p=>p.invested*mult);
     const value=hist.map(p=>p.value*mult);
-    const invNovo=hist.map(p=>n(p.invNovo)*mult);
-    const invCaixa=hist.map(p=>n(p.invCaixa)*mult);
     const spark=!target;
 
     if(spark){
@@ -1965,7 +1969,7 @@
       const banda=(cor)=>c=>{
         const{ctx,chartArea}=c.chart;if(!chartArea)return cor;
         const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);
-        g.addColorStop(0,cor.replace('ALPHA','0.24'));g.addColorStop(1,cor.replace('ALPHA','0.03'));
+        g.addColorStop(0,cor.replace('ALPHA','0.36'));g.addColorStop(1,cor.replace('ALPHA','0.05'));
         return g;};
       const escondido={borderWidth:0,pointRadius:0,pointHitRadius:0,fill:false};
       const cruz={id:'dcaCruz',afterDatasetsDraw(chart){
@@ -1983,8 +1987,6 @@
       if(!pmSerie.some(v=>v!==null))pmSerie=null;
       const sets=[
         {label:'Aportado',data:invested,borderColor:'#a78bfa',borderWidth:1.2,borderDash:[4,4],pointRadius:0,tension:.15,fill:false},
-        {label:'Aportado · novo',data:invNovo,borderColor:'rgba(167,139,250,.95)',borderWidth:1,pointRadius:0,tension:.15,fill:false},
-        {label:'Aportado · caixa',data:invCaixa,borderColor:'rgba(34,211,238,.75)',borderWidth:1,pointRadius:0,tension:.15,fill:false},
         {label:'Valor atual',data:value,borderColor:'#f59e0b',borderWidth:1.8,pointRadius:0,tension:.2,fill:false},
         Object.assign({label:'_posInv',data:posInv},escondido),
         Object.assign({label:'_posVal',data:posVal,fill:{target:2},backgroundColor:banda('rgba(32,201,151,ALPHA)')},escondido,{fill:{target:2}}),
