@@ -163,6 +163,8 @@
     .an-tab-proj th,.an-tab-proj td{padding-left:8px;padding-right:8px}
     .an-tab-proj th:first-child,.an-tab-proj td:first-child{padding-left:0}
     .an-tab-proj tr.an-now td{color:var(--muted);font-weight:700;background:var(--surface-2)}
+    .an-chart{position:relative;height:220px;margin-top:14px}
+    @media(max-width:760px){.an-chart{height:180px}}
     .an-tab-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
     @media(max-width:760px){
       .an-tab-proj{font-size:8.5px;min-width:0;width:100%}
@@ -318,9 +320,9 @@
     .dca-a-two span{display:block;font-size:7.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--soft);font-weight:700}
     .dca-a-two b{font-size:12px}
         .dca-box{border:1px solid var(--border);border-radius:14px;background:var(--surface-2);padding:4px 14px;margin-top:14px}
-    .db-head{padding:6px 0 10px;border-bottom:1px solid var(--border)}
-    .db-head .db-lbl{display:block;margin-bottom:6px}
-    .db-head .db-val{display:flex;align-items:baseline;gap:7px;font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+    .db-head{padding:6px 0 10px;border-bottom:1px solid var(--border);text-align:center}
+    .db-head .db-lbl{display:block;margin-bottom:6px;justify-content:center}
+    .db-head .db-val{display:flex;align-items:baseline;justify-content:center;gap:7px;font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.4px;font-variant-numeric:tabular-nums}
     .db-head .db-val .ar{color:var(--soft);font-weight:400;font-size:12px}
     .db-delta{font-size:10px;font-weight:800;letter-spacing:0}
     .db-delta.neg{color:var(--red)}.db-delta.pos{color:var(--green)}
@@ -1158,6 +1160,7 @@
     const cenarios=[25,50,100,200].map(x=>({rot:'+'+x+'%',mult:1+x/100}));
     if(topo.p>spot)cenarios.push({rot:'topo anterior',mult:topo.p/spot,destaque:true});
     cenarios.sort((a,b)=>a.mult-b.mult);
+    state.projCenarios=cenarios.map(c=>({rot:c.rot,mult:c.mult}));
     const moedaPreco=cur==='BRL'?'BRL':'USD';
     const valorHoje=p.qty*spot;
     // linha de referência: onde estamos hoje
@@ -1216,9 +1219,36 @@
         '<p class="an-note">Referência: topo do ciclo anterior em <b>'+directMoney(topo.p,cur==='BRL'?'BRL':'USD')+'</b> ('+fmtDate(topo.d)+'), '+
           'que representou <b>'+multCiclo.toFixed(1).replace('.',',')+'x</b> o fundo de '+directMoney(fundo.p,cur==='BRL'?'BRL':'USD')+' ('+fmtDate(fundo.d)+').</p>'+
         '<div class="an-tab-scroll"><table class="an-tab an-tab-proj"><thead><tr><th>Cenário</th><th>Preço do BTC</th><th>Aportado</th><th>Você teria</th><th>Lucro</th><th>A mais vs hoje</th></tr></thead><tbody>'+linhaHoje+linhasProj+'</tbody></table></div>'+
+        '<div class="an-chart"><canvas id="projChart"></canvas></div>'+
         '<p class="an-note">Com <b>'+p.qty.toFixed(8).replace('.',',')+' BTC</b>: cada 1% de alta vale aproximadamente '+money(p.qty*spot*0.01,cur)+
           '. O <b>aporte</b> é o que você tem investido hoje e não muda com o preço; “a mais vs hoje” compara com o patrimônio atual.</p>'+
       '</div>';
+    renderProjChart();
+  }
+
+  // Gráfico da projeção: patrimônio em cada cenário + linha do aporte (empate).
+  function renderProjChart(){
+    const el=$('projChart'); if(!el) return;
+    const antigo=Chart.getChart(el); if(antigo) antigo.destroy();
+    const p=state.view.position, cur=state.currency, spot=n(state.data.market.btcUsd);
+    const fx=n(state.data.market.usdBrl)||1;
+    const mult=cur==='BRL'?fx:1;
+    const base=(state.projCenarios&&state.projCenarios.length)?state.projCenarios:[{rot:'+25%',mult:1.25},{rot:'+50%',mult:1.5},{rot:'+100%',mult:2},{rot:'+200%',mult:3}];
+    const cenarios=[{rot:'hoje',mult:1}].concat(base);
+    const labels=cenarios.map(c=>c.rot);
+    const vals=cenarios.map(c=>p.qty*spot*c.mult*mult);
+    const custo=p.cost*mult;
+    const cores=vals.map(v=>v>=custo?'rgba(32,201,151,.75)':'rgba(251,100,118,.7)');
+    state.charts.proj=new Chart(el,{type:'bar',
+      data:{labels,datasets:[
+        {label:'Patrimônio',data:vals,backgroundColor:cores,borderRadius:6,borderSkipped:false,order:2},
+        {label:'Aportado',data:labels.map(()=>custo),type:'line',borderColor:'rgba(167,139,250,.85)',borderWidth:1.6,borderDash:[6,4],pointRadius:0,fill:false,order:1}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,animation:false,
+        plugins:{legend:{display:false},
+          tooltip:{callbacks:{label:c=>c.dataset.label+': '+money(c.parsed.y===undefined?c.raw:c.raw,cur)}}},
+        scales:{x:{grid:{display:false},ticks:{color:'#8c96a8',font:{size:9}}},
+                y:{grid:{color:'rgba(148,163,184,.14)'},ticks:{color:'#8c96a8',font:{size:9},callback:v=>compactDirect(v,cur)}}}}});
   }
 
   function openBanditMode(){if(!state.data)return;renderBandit();openModal('banditModal')}
