@@ -173,6 +173,25 @@
     .ap-k b{display:block;font-size:16px;font-weight:800;margin-top:4px;letter-spacing:-.5px;font-variant-numeric:tabular-nums;color:var(--text)}
     .ap-k i{display:block;font-size:9px;color:var(--soft);margin-top:3px;font-style:normal}
     .ap-k.pos b{color:var(--green)}
+    .ap-sens{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+    .ap-srow{border:1px solid var(--border);border-radius:10px;padding:9px 10px;background:var(--surface-2)}
+    .ap-srow span{display:block;font-size:8px;font-weight:800;letter-spacing:.4px;color:var(--muted)}
+    .ap-srow b{display:block;font-size:13px;font-weight:800;color:var(--text);margin-top:3px;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+    .ap-srow i{display:block;font-size:7.5px;color:var(--soft);font-style:normal;margin-top:2px}
+    .ap-srow.ok b{color:var(--green)}
+    @media(max-width:760px){.ap-sens{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .ap-mc{margin-top:14px;border-top:1px solid var(--border);padding-top:12px}
+    .ap-mch{font-size:8px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+    .ap-mch em{font-style:normal;text-transform:none;letter-spacing:0;font-weight:600;color:var(--soft);margin-left:6px}
+    .ap-mcg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .ap-mcbox{border:1px solid var(--border);border-radius:11px;padding:10px 12px;background:var(--surface-2)}
+    .ap-mcbox span{display:flex;align-items:center;gap:6px;font-size:7.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}
+    .ap-mcbox span i{width:8px;height:8px;border-radius:2px;flex:none}
+    .ap-mcbox b{display:block;font-size:20px;font-weight:800;margin-top:3px;color:var(--text);letter-spacing:-.6px}
+    .ap-mcbox b.pos{color:var(--green)}
+    .ap-mcbox i{display:block;font-size:8.5px;color:var(--soft);font-style:normal;line-height:1.3}
+    .ap-mcbox small{display:block;font-size:8px;color:var(--muted);margin-top:4px}
+    @media(max-width:760px){.ap-mcg{grid-template-columns:1fr}}
     .ap-cv{position:relative;height:240px;margin-top:12px}
     .ap-leg{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:8px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.3px}
     .ap-leg i{display:inline-block;width:12px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
@@ -1223,97 +1242,6 @@
     renderAposentadoria();
   }
 
-  // ===========================================================================
-  // APOSENTADORIA — estudo Smitty (BTC necessário para US$ 100 mil/ano)
-  // ===========================================================================
-  const APOS_ANOS=[2025,2030,2035,2040,2045,2050,2055,2060,2065,2070,2075];
-  const APOS_TAB={
-    25:[10.71,4.52,2.52,1.65,1.19,0.91,0.72,0.58,0.47,0.38,0.31],
-    35:[10.60,4.41,2.41,1.54,1.07,0.79,0.60,0.47,0.36,0.27,0.19],
-    45:[10.47,4.28,2.28,1.41,0.95,0.67,0.48,0.34,0.23,0.15,0.07],
-    55:[10.33,4.14,2.14,1.27,0.81,0.53,0.34,0.20,0.09,null,null],
-    65:[10.13,3.94,1.94,1.07,0.61,0.33,0.14,null,null,null,null]
-  };
-  function aposCfg(){
-    const idade=Math.max(18,Math.min(75,Number(localStorage.getItem('sl-apos-idade'))||35));
-    const meta=Math.max(1000,Number(localStorage.getItem('sl-apos-meta'))||10000);
-    const ano=Number(localStorage.getItem('sl-apos-ano'))||2045;
-    return {idade,meta,ano};
-  }
-  function aposIdadeRef(idade){
-    const idades=Object.keys(APOS_TAB).map(Number);
-    return idades.reduce((a,b)=>Math.abs(b-idade)<Math.abs(a-idade)?b:a,idades[0]);
-  }
-  function aposRef(idade,ano){
-    const i=APOS_ANOS.indexOf(ano); if(i<0) return null;
-    const v=APOS_TAB[aposIdadeRef(idade)][i];
-    return v===null||v===undefined?null:v;
-  }
-  function aposNumeros(){
-    const c=aposCfg(), fx=n(state.data.market.usdBrl)||1, spot=n(state.data.market.btcUsd), qty=n(state.view.position.qty);
-    const ref=aposRef(c.idade,c.ano);
-    const metaAnoUsd=(c.meta*12)/fx;
-    const necessario=ref?ref*metaAnoUsd/100000:null;
-    const rendaMes=ref?(qty/ref)*100000/12:null;   // US$/mês com a carteira atual
-    return {c,fx,spot,qty,ref,necessario,rendaMes};
-  }
-  function renderAposentadoria(){
-    const el=$('aposSec'); if(!el) return;
-    const a=aposNumeros();
-    if(a.necessario===null){
-      el.innerHTML='<div class="an-h">Aposentadoria</div><p class="an-note">Escolha um ano entre 2025 e 2075.</p>';
-      return;
-    }
-    const pct=a.necessario>0?a.qty/a.necessario*100:0;
-    const sobra=a.qty-a.necessario;
-    el.innerHTML='<div class="an-h">Aposentadoria <em>estudo Smitty · 4% de retirada · referência US$ 100 mil/ano</em></div>'+
-      '<div class="ap-inp">'+
-        '<label>Idade hoje<input id="apIdade" type="number" min="18" max="75" value="'+a.c.idade+'"></label>'+
-        '<label>Meta mensal (R$)<input id="apMeta" type="number" min="1000" step="500" value="'+a.c.meta+'"></label>'+
-        '<label>Ano alvo<input id="apAno" type="number" min="2025" max="2075" step="5" value="'+a.c.ano+'"></label>'+
-      '</div>'+
-      '<div class="ap-kp">'+
-        '<div class="ap-k"><span>BTC para a meta em '+a.c.ano+'</span><b>'+a.necessario.toFixed(4).replace('.',',')+' BTC</b><i>≈ '+money(a.necessario*a.spot,'BRL')+' hoje</i></div>'+
-        '<div class="ap-k pos"><span>Sua renda mensal em '+a.c.ano+'</span><b>'+money(a.rendaMes,'BRL')+'</b><i>≈ '+money(a.rendaMes,'USD')+'/mês com '+a.qty.toFixed(4).replace('.',',')+' BTC</i></div>'+
-        '<div class="ap-k '+(pct>=100?'pos':'')+'"><span>Você já garantiu</span><b>'+Math.round(pct)+'% da meta</b><i>'+(sobra>=0?'sobra '+(sobra).toFixed(4).replace('.',','):'faltam '+Math.abs(sobra).toFixed(4).replace('.',','))+' BTC</i></div>'+
-      '</div>'+
-      '<div class="ap-cv"><canvas id="apChart"></canvas></div>'+
-      '<div class="ap-leg">'+
-        [25,35,45,55,65].map(id=>'<span><i style="background:'+(Math.abs(id-aposIdadeRef(a.c.idade))<1?'#d97706':'rgba(217,119,6,.28)')+'"></i>'+id+' anos</span>').join('')+
-        '<span><i style="background:#20c997"></i>sua carteira</span></div>'+
-      '<p class="an-note">Cada curva é o BTC necessário para <b>'+directMoney(a.c.meta,'BRL')+'/mês</b>. A linha verde é o que você tem hoje: onde ela fica acima da sua curva, a aposentadoria está garantida.</p>';
-    const campos=['apIdade','apMeta','apAno'].map(id=>$(id)).filter(Boolean);
-    campos.forEach(inp=>{ inp.onchange=()=>{
-      localStorage.setItem('sl-apos-idade',String(Number($('apIdade').value)||35));
-      localStorage.setItem('sl-apos-meta',String(Number($('apMeta').value)||10000));
-      localStorage.setItem('sl-apos-ano',String(Number($('apAno').value)||2045));
-      renderAposentadoria();
-    };});
-    renderAposChart();
-  }
-  function renderAposChart(){
-    const el=$('apChart'); if(!el) return;
-    const antigo=Chart.getChart(el); if(antigo) antigo.destroy();
-    const a=aposNumeros(); if(a.necessario===null) return;
-    const fator=(a.c.meta*12/a.fx)/100000;
-    const refIdade=aposIdadeRef(a.c.idade);
-    const idxAno=APOS_ANOS.indexOf(a.c.ano);
-    const sets=Object.keys(APOS_TAB).map(id=>({
-      label:id+' anos',
-      data:APOS_TAB[id].map(v=>v===null||v===undefined?null:v*fator),
-      borderColor:Number(id)===refIdade?'#d97706':'rgba(217,119,6,.25)',
-      borderWidth:Number(id)===refIdade?2.4:1.2,pointRadius:0,tension:.25,fill:false,spanGaps:false
-    }));
-    sets.push({label:'sua carteira',data:APOS_ANOS.map(()=>a.qty),borderColor:'#20c997',borderWidth:1.7,borderDash:[6,4],pointRadius:0,tension:0,fill:false});
-    sets.push({label:'você está aqui',data:APOS_ANOS.map((_,i)=>i===idxAno?a.qty:null),borderColor:'#111827',backgroundColor:getComputedStyle(document.body).getPropertyValue('--text')||'#111',pointRadius:4,showLine:false});
-    state.charts.apos=new Chart(el,{type:'line',data:{labels:APOS_ANOS,datasets:sets},
-      options:{responsive:true,maintainAspectRatio:false,animation:false,
-        interaction:{mode:'index',intersect:false},
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+Number(c.parsed.y).toFixed(4)+' BTC'}}},
-        scales:{x:{grid:{display:false},ticks:{color:'#8c96a8',font:{size:9}}},
-                y:{type:'logarithmic',grid:{color:'rgba(148,163,184,.14)'},ticks:{color:'#8c96a8',font:{size:9},maxTicksLimit:5,callback:v=>{const x=Number(v);return x>=1?x.toFixed(1):x.toFixed(2)}}}}}});
-  }
-
   // Gráfico da projeção: patrimônio em cada cenário + linha do aporte (empate).
   function renderProjChart(){
     const el=$('projChart'); if(!el) return;
@@ -1333,10 +1261,139 @@
         {label:'Aportado',data:labels.map(()=>custo),type:'line',borderColor:'rgba(167,139,250,.85)',borderWidth:1.6,borderDash:[6,4],pointRadius:0,fill:false,order:1}
       ]},
       options:{responsive:true,maintainAspectRatio:false,animation:false,
-        plugins:{legend:{display:false},
-          tooltip:{callbacks:{label:c=>c.dataset.label+': '+money(c.parsed.y===undefined?c.raw:c.raw,cur)}}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+money(c.raw,cur)}}},
         scales:{x:{grid:{display:false},ticks:{color:'#8c96a8',font:{size:9}}},
                 y:{grid:{color:'rgba(148,163,184,.14)'},ticks:{color:'#8c96a8',font:{size:9},callback:v=>compactDirect(v,cur)}}}}});
+  }
+
+  // ===========================================================================
+  // APOSENTADORIA — modelo próprio calibrado com dados reais
+  // ---------------------------------------------------------------------------
+  // Preço: lei de potência  P(d) = A · d^n  (d = dias desde o gênese), calibrada
+  // em 4.143 fechamentos diários da Coinbase (2015-2026):
+  //     A = 2,0547e-17 · n = 5,7269 · desvio dos resíduos = 0,5534 (log)
+  // Cenários: conservador = -2σ (preço 0,33× a tendência), base = -1σ (0,58×),
+  // otimista = tendência. A renda é corrigida pela inflação até o ano alvo.
+  // Taxa de retirada: 3% / 4% / 5% (4% é a referência do estudo Trinity).
+  // ===========================================================================
+  const AP = Object.freeze({
+    A: 2.0547e-17, N: 5.7269, SIGMA: 0.5534, GENESIS: Date.UTC(2009, 0, 3),
+    CENARIOS: [
+      { id:'conservador', rot:'Conservador', k:2, cor:'#fb6476' },
+      { id:'base',        rot:'Base',        k:1, cor:'#f59e0b' },
+      { id:'otimista',    rot:'Otimista',    k:0, cor:'#20c997' }
+    ]
+  });
+  function apDias(ano, mes){ return Math.round((Date.UTC(ano, (mes||1)-1, 1) - AP.GENESIS) / 86400000); }
+  function apPrecoUsd(ano, cenario){
+    const c = AP.CENARIOS.find(x=>x.id===cenario) || AP.CENARIOS[1];
+    const fair = AP.A * Math.pow(apDias(ano), AP.N);
+    return fair * Math.exp(-c.k * AP.SIGMA);
+  }
+  function apCfg(){
+    const saved = (k, def) => { const v = Number(localStorage.getItem(k)); return isFinite(v) && v > 0 ? v : def; };
+    return {
+      idade: Math.min(80, Math.max(18, saved('sl-ap-idade', 35))),
+      idadeAlvo: Math.min(90, Math.max(30, saved('sl-ap-alvo', 60))),
+      renda: saved('sl-ap-renda', 10000),
+      w: saved('sl-ap-w', 4) / 100,
+      infl: saved('sl-ap-infl', 4.5) / 100
+    };
+  }
+  /** BTC necessário hoje-para-aposentar: renda em R$ de hoje corrigida pela inflação. */
+  function apNecessario(cfg, ano, cenario, fx){
+    const anos = Math.max(0, ano - new Date().getFullYear());
+    const rendaAnoNominal = cfg.renda * 12 * Math.pow(1 + cfg.infl, anos);
+    const precoBrl = apPrecoUsd(ano, cenario) * fx;
+    return precoBrl > 0 ? rendaAnoNominal / (precoBrl * cfg.w) : 0;
+  }
+  /** Sensibilidade: BTC necessário para diferentes crescimentos reais do BTC. */
+  function apSensibilidade(cfg, ano, fx, crescimentos){
+    const anos = Math.max(1, ano - new Date().getFullYear());
+    const rendaAnoNominal = cfg.renda * 12 * Math.pow(1 + cfg.infl, anos);
+    const precoHojeBrl = n(state.data.market.btcUsd) * fx;
+    return crescimentos.map(g => {
+      const precoFuturo = precoHojeBrl * Math.pow(1 + g, anos);
+      return { g, btc: precoFuturo > 0 ? rendaAnoNominal / (precoFuturo * cfg.w) : 0 };
+    });
+  }
+
+  function renderAposentadoria(){
+    const el=$('aposSec'); if(!el) return;
+    const cfg=apCfg(), fx=n(state.data.market.usdBrl)||5.9, spot=n(state.data.market.btcUsd), qty=n(state.view.position.qty);
+    const ano=new Date().getFullYear()+(cfg.idadeAlvo-cfg.idade);
+    const nec={}, pct={};
+    AP.CENARIOS.forEach(c=>{ nec[c.id]=apNecessario(cfg,ano,c.id,fx); pct[c.id]=nec[c.id]>0?qty/nec[c.id]*100:0; });
+
+    el.innerHTML='<div class="an-h">Aposentadoria <em>modelo próprio · lei de potência calibrada · retirada '+Math.round(cfg.w*100)+'%</em></div>'+
+      '<div class="ap-inp">'+
+        '<label>Idade hoje<input id="apIdade" type="number" min="18" max="80" value="'+cfg.idade+'"></label>'+
+        '<label>Aposentar com<input id="apAlvo" type="number" min="30" max="90" value="'+cfg.idadeAlvo+'"></label>'+
+        '<label>Renda mensal (R$)<input id="apRenda" type="number" min="1000" step="500" value="'+cfg.renda+'"></label>'+
+        '<label>Retirada (%)<input id="apW" type="number" min="2" max="8" step="0.5" value="'+(cfg.w*100)+'"></label>'+
+        '<label>Inflação (% a.a.)<input id="apInfl" type="number" min="0" max="15" step="0.5" value="'+(cfg.infl*100)+'"></label>'+
+      '</div>'+
+      '<div class="ap-kp">'+
+        AP.CENARIOS.map(c=>'<div class="ap-k '+(pct[c.id]>=100?'pos':'')+'">'+
+          '<span>'+c.rot+' · BTC necessário</span>'+
+          '<b>'+nec[c.id].toFixed(4).replace('.',',')+' BTC</b>'+
+          '<i>você tem <b style="color:'+(pct[c.id]>=100?'var(--green)':'var(--red)')+'">'+Math.round(pct[c.id])+'%</b> · '+
+            (pct[c.id]>=100?'sobra ':'faltam ')+Math.abs(qty-nec[c.id]).toFixed(4).replace('.',',')+' BTC</i>'+
+        '</div>').join('')+
+      '</div>'+
+      '<div class="ap-cv"><canvas id="apChart"></canvas></div>'+
+      '<div class="ap-leg">'+AP.CENARIOS.map(c=>'<span><i style="background:'+c.cor+'"></i>'+c.rot+'</span>').join('')+
+        '<span><i style="background:#22d3ee"></i>sua carteira</span></div>'+
+      '<p class="an-note">Você se aposenta em <b>'+ano+'</b> (aos '+cfg.idadeAlvo+'). Renda de <b>'+directMoney(cfg.renda,'BRL')+'/mês</b> em valores de hoje, corrigida por '+ (cfg.infl*100).toFixed(1).replace('.',',')+'% a.a. até lá. '+
+        'O cenário <b>conservador</b> usa o piso do corredor da lei de potência (preço ≈ 33% da tendência), o <b>otimista</b> usa a própria tendência.</p>'+
+      '<div class="ap-mc" id="apMc"></div>';
+
+    ['apIdade','apAlvo','apRenda','apW','apInfl'].forEach(id=>{ const inp=$(id); if(!inp) return;
+      inp.onchange=()=>{
+        localStorage.setItem('sl-ap-idade', Number($('apIdade').value)||35);
+        localStorage.setItem('sl-ap-alvo', Number($('apAlvo').value)||60);
+        localStorage.setItem('sl-ap-renda', Number($('apRenda').value)||10000);
+        localStorage.setItem('sl-ap-w', Number($('apW').value)||4);
+        localStorage.setItem('sl-ap-infl', Number($('apInfl').value)||4.5);
+        renderAposentadoria();
+      };
+    });
+    renderAposChart(cfg, ano, fx, qty, nec);
+    renderApSens(cfg, ano, fx, qty, nec);
+  }
+
+  function renderAposChart(cfg, ano, fx, qty, nec){
+    const el=$('apChart'); if(!el) return;
+    const antigo=Chart.getChart(el); if(antigo) antigo.destroy();
+    const ini=new Date().getFullYear()+1;
+    const anos=[]; const fimAno=Math.max(ano+5, 2060);
+    for(let a=ini;a<=fimAno;a+=5) anos.push(a);
+    const sets=AP.CENARIOS.map(c=>({
+      label:c.rot, data:anos.map(a=>apNecessario(cfg,a,c.id,fx)),
+      borderColor:c.cor, borderWidth:c.id==='base'?2.4:1.6, pointRadius:0, tension:.25, fill:false
+    }));
+    sets.push({label:'sua carteira',data:anos.map(()=>qty),borderColor:'#22d3ee',borderWidth:1.7,borderDash:[6,4],pointRadius:0,tension:0,fill:false});
+    sets.push({label:'aposentadoria em '+ano,data:anos.map(a=>a===ano?qty:null),borderColor:'#111827',pointRadius:4,showLine:false});
+    state.charts.apos=new Chart(el,{type:'line',data:{labels:anos,datasets:sets},
+      options:{responsive:true,maintainAspectRatio:false,animation:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+Number(c.parsed.y).toFixed(4)+' BTC'}}},
+        scales:{x:{grid:{display:false},ticks:{color:'#8c96a8',font:{size:9}}},
+                y:{type:'logarithmic',grid:{color:'rgba(148,163,184,.14)'},ticks:{color:'#8c96a8',font:{size:9},maxTicksLimit:4,callback:v=>{const x=Number(v);return x>=1?x.toFixed(0):x.toFixed(2)}}}}}});
+  }
+
+  function renderApSens(cfg, ano, fx, qty, nec){
+    const el=$('apMc'); if(!el) return;
+    const linhas=apSensibilidade(cfg, ano, fx, [0.08,0.12,0.16,0.20,0.25]);
+    el.innerHTML='<div class="ap-mch">E se o BTC crescer menos? <em>BTC necessário em '+ano+' por crescimento real ao ano</em></div>'+
+      '<div class="ap-sens">'+linhas.map(l=>{
+        const ok=qty>=l.btc;
+        return '<div class="ap-srow '+(ok?'ok':'')+'"><span>'+(l.g*100).toFixed(0)+'% a.a.</span>'+
+          '<b>'+l.btc.toFixed(4).replace('.',',')+' BTC</b>'+
+          '<i>'+(ok?'✓ você já tem':'faltam '+(l.btc-qty).toFixed(4).replace('.',',')+' BTC')+'</i></div>';
+      }).join('')+'</div>'+
+      '<p class="an-note">Quanto mais conservador o crescimento, mais BTC você precisa. A linha de <b>8% ao ano</b> é o cenário de “BTC virou ativo maduro”; '+
+        '<b>25%</b> é o ritmo histórico. Se você está coberto até 8%, a aposentadoria aguenta até o cenário mais pessimista.</p>';
   }
 
   function openBanditMode(){if(!state.data)return;renderBandit();openModal('banditModal')}

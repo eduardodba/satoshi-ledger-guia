@@ -10,7 +10,7 @@
  */
 
 var APP = Object.freeze({
-  VERSION: '2.36.0',
+  VERSION: '2.37.0',
   SHEETS: {
     IRPF: 'IRPF',
     CONTRIBUTIONS: 'Aportes',

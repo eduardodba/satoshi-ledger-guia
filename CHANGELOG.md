@@ -23,6 +23,20 @@ Formato: `versão · data`
 - Venda **sem caixa especial** e com o **mesmo âmbar** da compra.
 - Gráfico **vendido × plano** (acumulado) e **caixa gerado** no card.
 
+## 2.37 · 21/11/2026 — Estudo de aposentadoria próprio
+
+- Substituí o modelo importado por um **estudo próprio**, calibrado em **4.143
+  fechamentos diários** do BTC (Coinbase, 2015-2026):
+  `preço = A · dias^5,7269`, com A = 2,0547e-17 e resíduo log de 0,5534.
+- **Três cenários** de preço: conservador (piso do corredor, −2σ), base (−1σ) e
+  otimista (tendência).
+- Entradas ajustáveis: **idade**, **idade de aposentadoria**, **renda mensal**,
+  **taxa de retirada** (3-5%) e **inflação**.
+- **Gráfico** do BTC necessário por ano de aposentadoria, com as três curvas e a
+  linha da sua carteira.
+- **Sensibilidade por crescimento**: quanto de BTC você precisa se o BTC crescer
+  8%, 12%, 16%, 20% ou 25% ao ano — o teste mais honesto contra o otimismo do modelo.
+
 ## 2.36 · 21/11/2026 — Aposentadoria na análise
 
 - Nova seção **Aposentadoria** na Análise detalhada, baseada no estudo de Smitty
