@@ -938,7 +938,7 @@
     // 'Caixa') e linhas de ajuste ('Ajuste') entram em posição/PM/ROI, mas não no DCA.
     // Todas as origens de compra entram no ciclo (Novo, Caixa e Especial): o PM e o
     // valor atual do ciclo refletem todo o BTC comprado no período, não só o dinheiro novo.
-    const buys=(view.transactions||[]).filter(t=>!isAdjustment(t)&&!isCoinAdjustment(t)&&n(t.amountUsd)>0&&n(t.quantity)>0).map(t=>({date:parseDate(t.date),iso:String(t.date).slice(0,10),amountUsd:n(t.amountUsd),quantity:n(t.quantity),priceUsd:n(t.priceUsd)})).sort((a,b)=>a.date-b.date);
+    const buys=(view.transactions||[]).filter(t=>!isAdjustment(t)&&!isCoinAdjustment(t)&&n(t.amountUsd)>0&&n(t.quantity)>0).map(t=>({date:parseDate(t.date),iso:String(t.date).slice(0,10),amountUsd:n(t.amountUsd),quantity:n(t.quantity),priceUsd:n(t.priceUsd),origem:normOrigin(t.origin)})).sort((a,b)=>a.date-b.date);
     if(buys.length<2)return{active:false,reason:'insufficient'};
 
     // O ciclo corrente é o bloco final de aportes contínuos: começa no primeiro
@@ -984,13 +984,19 @@
     (state.data.dailyHistory||[]).forEach(d=>{if(n(d.btcPrice))priceByDate[d.date]=n(d.btcPrice)});
     const series=[];
     let cursor=new Date(startDate);
-    let accInvested=0,accBtc=0,bi=0,lastPrice=cycleBuys[0].priceUsd||spot;
+    let accInvested=0,accBtc=0,accNovo=0,accCaixa=0,bi=0,lastPrice=cycleBuys[0].priceUsd||spot;
     const endDate=new Date(now.getFullYear(),now.getMonth(),now.getDate());
     while(cursor<=endDate){
       const iso=dcaIso(cursor);
-      while(bi<cycleBuys.length&&cycleBuys[bi].date<=cursor){accInvested+=cycleBuys[bi].amountUsd;accBtc+=cycleBuys[bi].quantity;bi++}
+      while(bi<cycleBuys.length&&cycleBuys[bi].date<=cursor){
+        const bq=cycleBuys[bi];
+        accInvested+=bq.amountUsd;accBtc+=bq.quantity;
+        // dinheiro novo vs pago com caixa (Caixa/Especial)
+        if(bq.origem==='Caixa'||bq.origem==='Especial')accCaixa+=bq.amountUsd;else accNovo+=bq.amountUsd;
+        bi++
+      }
       if(priceByDate[iso])lastPrice=priceByDate[iso];
-      series.push({date:iso,invested:accInvested,value:accBtc*lastPrice,btc:accBtc,price:lastPrice,pm:accBtc>0?accInvested/accBtc:null});
+      series.push({date:iso,invested:accInvested,value:accBtc*lastPrice,btc:accBtc,price:lastPrice,pm:accBtc>0?accInvested/accBtc:null,invNovo:accNovo,invCaixa:accCaixa});
       cursor=new Date(cursor.getTime()+DCA_MS_DAY);
     }
     // Garante que o último ponto reflita o spot atual.
@@ -1009,12 +1015,17 @@
     const nextExpected=new Date(lastBuy.date.getTime()+Math.round(cadenceDays)*DCA_MS_DAY);
     const daysToNext=Math.ceil((nextExpected-now)/DCA_MS_DAY);
 
+    const investedNovo=cycleBuys.reduce((x,b)=>x+((b.origem==='Caixa'||b.origem==='Especial')?0:b.amountUsd),0);
+    const investedCaixa=investedUsd-investedNovo;
+
     return{
       active:true,
       paused:pausado,
       cycleStartIso,
       buys:cycleBuys.length,
       investedUsd,
+      investedNovo,
+      investedCaixa,
       btcInCycle,
       currentValueUsd,
       pnlUsd,
@@ -1731,6 +1742,16 @@
               ${deltaCiclo===null?'':`<em class="${deltaCiclo>=0?'positive':'negative'}">${deltaCiclo>=0?'+':''}${deltaCiclo.toFixed(1).replace('.',',')}%</em>`}
             </div>
             <div class="dca-a-line">
+              <span class="k">· dinheiro novo</span>
+              <b>${money(n(dcaV.investedNovo),cur)}</b>
+              ${aportadoCiclo>0?`<span class="pct">${(n(dcaV.investedNovo)/aportadoCiclo*100).toFixed(0)}%</span>`:''}
+            </div>
+            <div class="dca-a-line">
+              <span class="k">· do caixa</span>
+              <b>${money(n(dcaV.investedCaixa),cur)}</b>
+              ${aportadoCiclo>0?`<span class="pct">${(n(dcaV.investedCaixa)/aportadoCiclo*100).toFixed(0)}%</span>`:''}
+            </div>
+            <div class="dca-a-line">
               <span class="k">BTC no ciclo</span>
               <b>${btcCiclo>0?btcCiclo.toFixed(8).replace('.',',')+' BTC':'—'}</b>
             </div>
@@ -1756,7 +1777,7 @@
           <div class="dca-a-head"><span>Ciclo de aportes</span><b>semana ${feitos} de ${total}</b><em>${pctProg}%</em></div>
           <div class="dca-a-ticks">${ticks}</div>
           <div class="dca-a-dates"><span>${dIni}</span><span>faltam ${faltam} ${faltam===1?'semana':'semanas'}</span><span>${dFim}</span></div>
-          <div class="dca-a-sparkhead"><span>Aportado × valor</span><em class="${deltaPos?'positive':'negative'}">${deltaTxt}</em>
+          <div class="dca-a-sparkhead"><span>Aportado (novo · caixa) × valor</span><em class="${deltaPos?'positive':'negative'}">${deltaTxt}</em>
             
           </div>
           <div class="dca-a-spark"><canvas id="dcaSpark" class="zoomable" ondblclick="openChartFull('dca')" title="Duplo clique para expandir"></canvas></div>
@@ -1925,6 +1946,8 @@
     const labels=hist.map(p=>fmtDate(p.date));
     const invested=hist.map(p=>p.invested*mult);
     const value=hist.map(p=>p.value*mult);
+    const invNovo=hist.map(p=>n(p.invNovo)*mult);
+    const invCaixa=hist.map(p=>n(p.invCaixa)*mult);
     const spark=!target;
 
     if(spark){
@@ -1942,7 +1965,7 @@
       const banda=(cor)=>c=>{
         const{ctx,chartArea}=c.chart;if(!chartArea)return cor;
         const g=ctx.createLinearGradient(0,chartArea.top,0,chartArea.bottom);
-        g.addColorStop(0,cor.replace('ALPHA','0.36'));g.addColorStop(1,cor.replace('ALPHA','0.05'));
+        g.addColorStop(0,cor.replace('ALPHA','0.24'));g.addColorStop(1,cor.replace('ALPHA','0.03'));
         return g;};
       const escondido={borderWidth:0,pointRadius:0,pointHitRadius:0,fill:false};
       const cruz={id:'dcaCruz',afterDatasetsDraw(chart){
@@ -1960,6 +1983,8 @@
       if(!pmSerie.some(v=>v!==null))pmSerie=null;
       const sets=[
         {label:'Aportado',data:invested,borderColor:'#a78bfa',borderWidth:1.2,borderDash:[4,4],pointRadius:0,tension:.15,fill:false},
+        {label:'Aportado · novo',data:invNovo,borderColor:'rgba(167,139,250,.95)',borderWidth:1,pointRadius:0,tension:.15,fill:false},
+        {label:'Aportado · caixa',data:invCaixa,borderColor:'rgba(34,211,238,.75)',borderWidth:1,pointRadius:0,tension:.15,fill:false},
         {label:'Valor atual',data:value,borderColor:'#f59e0b',borderWidth:1.8,pointRadius:0,tension:.2,fill:false},
         Object.assign({label:'_posInv',data:posInv},escondido),
         Object.assign({label:'_posVal',data:posVal,fill:{target:2},backgroundColor:banda('rgba(32,201,151,ALPHA)')},escondido,{fill:{target:2}}),
